@@ -1,44 +1,97 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Modal, StyleSheet, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RADIUS, SPACING, FONT, progressColor } from '../utils/theme';
+import { RADIUS, SPACING, FONT, progressColor } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 // ═══ AVATAR ═══
-export const Avatar = ({ size = 40, url, color = COLORS.orange, name = '' }) => {
+export const Avatar = ({ size = 40, url, color, name = '' }) => {
+  const { colors: COLORS } = useTheme();
+  const resolvedColor = color !== undefined ? color : COLORS.orange;
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2);
+  const styles = useMemo(() => StyleSheet.create({
+    avatar: {
+      backgroundColor: COLORS.card,
+      borderWidth: 2,
+      borderColor: COLORS.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    avatarText: {
+      fontWeight: FONT.bold,
+    },
+  }), [COLORS]);
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size * 0.35 }]}>
       {url ? (
         <Image source={{ uri: url }} style={{ width: '100%', height: '100%', borderRadius: size * 0.35 }} />
       ) : (
-        <Text style={[styles.avatarText, { fontSize: size * 0.35, color }]}>{initials || '?'}</Text>
+        <Text style={[styles.avatarText, { fontSize: size * 0.35, color: resolvedColor }]}>{initials || '?'}</Text>
       )}
     </View>
   );
 };
 
 // ═══ PROGRESS BAR ═══
+const progressTrackStyle = StyleSheet.create({
+  track: { width: '100%', backgroundColor: '#1A1A1A', overflow: 'hidden' },
+  fill: { transition: 'width 0.6s ease' },
+});
+
 export const ProgressBar = ({ value = 0, height = 6 }) => (
-  <View style={[styles.progressTrack, { height, borderRadius: height + 2 }]}>
-    <View style={[styles.progressFill, { width: `${value}%`, height, borderRadius: height + 2, backgroundColor: progressColor(value) }]} />
+  <View style={[progressTrackStyle.track, { height, borderRadius: height + 2 }]}>
+    <View style={[progressTrackStyle.fill, { width: `${value}%`, height, borderRadius: height + 2, backgroundColor: progressColor(value) }]} />
   </View>
 );
 
 // ═══ CHIP ═══
-export const Chip = ({ label, active, onPress, color }) => (
-  <TouchableOpacity onPress={onPress} style={[styles.chip, active && { backgroundColor: color || COLORS.accent, borderColor: 'transparent' }]}>
-    <Text style={[styles.chipText, active && { color: '#000', fontWeight: FONT.bold }]}>{label}</Text>
-  </TouchableOpacity>
-);
+export const Chip = ({ label, active, onPress, color }) => {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    chip: {
+      paddingVertical: 8,
+      paddingHorizontal: 18,
+      borderRadius: RADIUS.pill,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      backgroundColor: COLORS.card,
+    },
+    chipText: {
+      fontSize: 12,
+      fontWeight: FONT.medium,
+      color: COLORS.t3,
+    },
+  }), [COLORS]);
+  return (
+    <TouchableOpacity onPress={onPress} style={[styles.chip, active && { backgroundColor: color || COLORS.accent, borderColor: 'transparent' }]}>
+      <Text style={[styles.chipText, active && { color: '#000', fontWeight: FONT.bold }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 // ═══ BUTTON ═══
 export const Button = ({ children, onPress, variant = 'primary', disabled, style: customStyle }) => {
+  const { colors: COLORS } = useTheme();
   const variants = {
     primary: { backgroundColor: COLORS.accent, borderWidth: 0 },
     secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.border },
     danger: { backgroundColor: 'transparent', borderWidth: 0 },
   };
   const textColors = { primary: '#000', secondary: COLORS.silver, danger: COLORS.red };
+  const styles = useMemo(() => StyleSheet.create({
+    button: {
+      width: '100%',
+      padding: 14,
+      borderRadius: RADIUS.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonText: {
+      fontSize: 14,
+      fontWeight: FONT.bold,
+    },
+  }), [COLORS]);
 
   return (
     <TouchableOpacity onPress={disabled ? null : onPress} style={[styles.button, variants[variant], disabled && { opacity: 0.5 }, customStyle]} activeOpacity={0.7}>
@@ -48,24 +101,50 @@ export const Button = ({ children, onPress, variant = 'primary', disabled, style
 };
 
 // ═══ INPUT ═══
-export const Input = ({ placeholder, value, onChangeText, type = 'text', multiline, rows = 4 }) => (
-  <View style={{ marginBottom: SPACING.md }}>
-    <TextInput
-      placeholder={placeholder}
-      placeholderTextColor="#444"
-      value={value}
-      onChangeText={onChangeText}
-      secureTextEntry={type === 'password'}
-      keyboardType={type === 'email' ? 'email-address' : type === 'phone' ? 'phone-pad' : 'default'}
-      multiline={multiline}
-      numberOfLines={multiline ? rows : 1}
-      style={[styles.input, multiline && { height: rows * 24, textAlignVertical: 'top' }]}
-    />
-  </View>
-);
+export const Input = ({ placeholder, value, onChangeText, type = 'text', multiline, rows = 4 }) => {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    input: {
+      width: '100%',
+      padding: 14,
+      backgroundColor: COLORS.card,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      borderRadius: RADIUS.md,
+      color: COLORS.t1,
+      fontSize: 14,
+    },
+  }), [COLORS]);
+  return (
+    <View style={{ marginBottom: SPACING.md }}>
+      <TextInput
+        placeholder={placeholder}
+        placeholderTextColor="#444"
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={type === 'password'}
+        keyboardType={type === 'email' ? 'email-address' : type === 'phone' ? 'phone-pad' : 'default'}
+        multiline={multiline}
+        numberOfLines={multiline ? rows : 1}
+        style={[styles.input, multiline && { height: rows * 24, textAlignVertical: 'top' }]}
+      />
+    </View>
+  );
+};
 
 // ═══ CARD ═══
 export const Card = ({ children, style: customStyle, onPress }) => {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    card: {
+      backgroundColor: COLORS.card,
+      borderRadius: RADIUS.xl,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      padding: SPACING.lg,
+      marginBottom: SPACING.sm,
+    },
+  }), [COLORS]);
   const Wrapper = onPress ? TouchableOpacity : View;
   return (
     <Wrapper onPress={onPress} activeOpacity={0.7} style={[styles.card, customStyle]}>
@@ -75,29 +154,59 @@ export const Card = ({ children, style: customStyle, onPress }) => {
 };
 
 // ═══ SECTION HEADER ═══
-export const SectionHeader = ({ title, actionText, onAction }) => (
-  <View style={styles.sectionHeader}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    {actionText && (
-      <TouchableOpacity onPress={onAction}>
-        <Text style={styles.sectionAction}>{actionText} →</Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
+export const SectionHeader = ({ title, actionText, onAction }) => {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => StyleSheet.create({
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: FONT.bold,
+      color: COLORS.t1,
+    },
+    sectionAction: {
+      fontSize: 12,
+      color: COLORS.silver,
+    },
+  }), [COLORS]);
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {actionText && (
+        <TouchableOpacity onPress={onAction}>
+          <Text style={styles.sectionAction}>{actionText} →</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 // ═══ BADGE ═══
 export const Badge = ({ label, color }) => (
-  <View style={[styles.badge, { backgroundColor: color + '20' }]}>
-    <Text style={[styles.badgeText, { color }]}>{label}</Text>
+  <View style={[badgeStyle.badge, { backgroundColor: color + '20' }]}>
+    <Text style={[badgeStyle.badgeText, { color }]}>{label}</Text>
   </View>
 );
 
+const badgeStyle = StyleSheet.create({
+  badge: { paddingVertical: 3, paddingHorizontal: 10, borderRadius: 10 },
+  badgeText: { fontSize: 9, fontWeight: FONT.bold },
+});
+
 // ═══ STATUS DOT ═══
 export const StatusDot = ({ status }) => {
-  const colors = { active: COLORS.green, pending: COLORS.orange, suspended: COLORS.red };
-  return <View style={[styles.statusDot, { backgroundColor: colors[status] || COLORS.t3 }]} />;
+  const { colors: COLORS } = useTheme();
+  const colorMap = { active: COLORS.green, pending: COLORS.orange, suspended: COLORS.red };
+  return <View style={[statusDotStyle.dot, { backgroundColor: colorMap[status] || COLORS.t3 }]} />;
 };
+
+const statusDotStyle = StyleSheet.create({
+  dot: { width: 6, height: 6, borderRadius: 3 },
+});
 
 // ═══ TOAST ═══
 // Usage: const { toast, showToast } = useToast();
@@ -116,9 +225,19 @@ export function useToast() {
 }
 
 export function Toast({ toast }) {
+  const { colors: COLORS } = useTheme();
   if (!toast) return null;
   const color = { success: COLORS.green, error: COLORS.red, info: COLORS.accent }[toast.type] || COLORS.accent;
   const icon  = { success: 'checkmark-circle', error: 'alert-circle', info: 'information-circle' }[toast.type] || 'information-circle';
+  const toastS = useMemo(() => StyleSheet.create({
+    wrap: {
+      position: 'absolute', top: 12, left: 14, right: 14, zIndex: 9999,
+      backgroundColor: '#1C1C1C', borderRadius: 12, borderLeftWidth: 4,
+      padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 10,
+    },
+    msg: { flex: 1, fontSize: 13, color: COLORS.t1, fontWeight: FONT.medium },
+  }), [COLORS]);
   return (
     <View style={[toastS.wrap, { borderLeftColor: color }]}>
       <Ionicons name={icon} size={18} color={color} />
@@ -130,6 +249,19 @@ export function Toast({ toast }) {
 // ═══ CONFIRM MODAL ═══
 // Usage: <ConfirmModal visible={...} title="..." message="..." onConfirm={...} onCancel={...} danger />
 export function ConfirmModal({ visible, title, message, onConfirm, onCancel, confirmLabel = 'Confirm', danger = false }) {
+  const { colors: COLORS } = useTheme();
+  const cmS = useMemo(() => StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+    box: { width: '100%', maxWidth: 340, backgroundColor: '#1C1C1C', borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
+    title: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 8 },
+    msg: { fontSize: 13, color: COLORS.t3, lineHeight: 20, marginBottom: 20 },
+    row: { flexDirection: 'row', gap: 12 },
+    cancel: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
+    cancelTxt: { fontSize: 14, color: COLORS.silver },
+    confirm: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.accent, alignItems: 'center' },
+    confirmTxt: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
+    danger: { backgroundColor: COLORS.red + '20', borderWidth: 1, borderColor: COLORS.red + '50' },
+  }), [COLORS]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={cmS.overlay}>
@@ -160,6 +292,17 @@ function extractYouTubeId(url) {
 }
 
 export function VideoPlayer({ url, title }) {
+  const { colors: COLORS } = useTheme();
+  const vpS = useMemo(() => StyleSheet.create({
+    webWrap: { width: '100%', aspectRatio: 16 / 9, borderRadius: 10, overflow: 'hidden', backgroundColor: '#000', marginBottom: 16 },
+    card: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#0A0A0A', borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 16 },
+    thumb: { width: 70, height: 56, borderRadius: 8, backgroundColor: '#FF000015', alignItems: 'center', justifyContent: 'center' },
+    playBtn: { position: 'absolute', bottom: 6, right: 6, width: 22, height: 22, borderRadius: 6, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
+    info: { flex: 1 },
+    title: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, lineHeight: 18, marginBottom: 4 },
+    sub: { fontSize: 11, color: COLORS.accent },
+  }), [COLORS]);
+
   if (!url) return null;
   const ytId = extractYouTubeId(url);
 
@@ -192,129 +335,3 @@ export function VideoPlayer({ url, title }) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  avatar: {
-    backgroundColor: COLORS.card,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatarText: {
-    fontWeight: FONT.bold,
-  },
-  progressTrack: {
-    width: '100%',
-    backgroundColor: '#1A1A1A',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    transition: 'width 0.6s ease',
-  },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.card,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: FONT.medium,
-    color: COLORS.t3,
-  },
-  button: {
-    width: '100%',
-    padding: 14,
-    borderRadius: RADIUS.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    fontSize: 14,
-    fontWeight: FONT.bold,
-  },
-  input: {
-    width: '100%',
-    padding: 14,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: RADIUS.md,
-    color: COLORS.t1,
-    fontSize: 14,
-  },
-  card: {
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.lg,
-    marginBottom: SPACING.sm,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: FONT.bold,
-    color: COLORS.t1,
-  },
-  sectionAction: {
-    fontSize: 12,
-    color: COLORS.silver,
-  },
-  badge: {
-    paddingVertical: 3,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: FONT.bold,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-});
-
-const toastS = StyleSheet.create({
-  wrap: {
-    position: 'absolute', top: 12, left: 14, right: 14, zIndex: 9999,
-    backgroundColor: '#1C1C1C', borderRadius: 12, borderLeftWidth: 4,
-    padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 10,
-  },
-  msg: { flex: 1, fontSize: 13, color: COLORS.t1, fontWeight: FONT.medium },
-});
-
-const cmS = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  box: { width: '100%', maxWidth: 340, backgroundColor: '#1C1C1C', borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
-  title: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 8 },
-  msg: { fontSize: 13, color: COLORS.t3, lineHeight: 20, marginBottom: 20 },
-  row: { flexDirection: 'row', gap: 12 },
-  cancel: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center' },
-  cancelTxt: { fontSize: 14, color: COLORS.silver },
-  confirm: { flex: 1, paddingVertical: 12, borderRadius: RADIUS.md, backgroundColor: COLORS.accent, alignItems: 'center' },
-  confirmTxt: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-  danger: { backgroundColor: COLORS.red + '20', borderWidth: 1, borderColor: COLORS.red + '50' },
-});
-
-const vpS = StyleSheet.create({
-  webWrap: { width: '100%', aspectRatio: 16 / 9, borderRadius: 10, overflow: 'hidden', backgroundColor: '#000', marginBottom: 16 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#0A0A0A', borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 16 },
-  thumb: { width: 70, height: 56, borderRadius: 8, backgroundColor: '#FF000015', alignItems: 'center', justifyContent: 'center' },
-  playBtn: { position: 'absolute', bottom: 6, right: 6, width: 22, height: 22, borderRadius: 6, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1 },
-  title: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, lineHeight: 18, marginBottom: 4 },
-  sub: { fontSize: 11, color: COLORS.accent },
-});

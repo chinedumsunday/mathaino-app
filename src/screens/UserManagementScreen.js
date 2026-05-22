@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Avatar, Chip, Badge, StatusDot } from '../components/UI';
 import { apiListUsers } from '../services/api';
 
 const FILTERS = ['All', 'Students', 'Lecturers', 'Faculty', 'Pending'];
 
 const ROLE_MAP = { Students: 'STUDENT', Lecturers: 'LECTURER', Faculty: 'FACULTY' };
-const roleColor = (role) => ({
-  STUDENT: COLORS.blue, LECTURER: COLORS.teal, FACULTY: COLORS.orange, SUPER_ADMIN: COLORS.pink,
-}[role] || COLORS.blue);
 
 const roleLabel = (role) => ({
   STUDENT: 'Student', LECTURER: 'Lecturer', FACULTY: 'Admin', SUPER_ADMIN: 'Super Admin',
 }[role] || role);
 
 export default function UserManagementScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const initialFilter = route.params?.filter || 'All';
   const [filter, setFilter] = useState(initialFilter);
   const [search, setSearch] = useState('');
@@ -30,6 +29,10 @@ export default function UserManagementScreen({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const searchTimer = useRef(null);
+
+  const roleColor = (role) => ({
+    STUDENT: COLORS.blue, LECTURER: COLORS.teal, FACULTY: COLORS.orange, SUPER_ADMIN: COLORS.pink,
+  }[role] || COLORS.blue);
 
   const load = useCallback(async (searchVal = search, filterVal = filter) => {
     try {
@@ -60,6 +63,33 @@ export default function UserManagementScreen({ route, navigation }) {
   };
 
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    count: { fontSize: 12, color: COLORS.t3 },
+    searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 12, position: 'relative' },
+    searchIcon: { position: 'absolute', left: 14, top: 14, zIndex: 1 },
+    searchInput: { width: '100%', paddingVertical: 12, paddingLeft: 40, paddingRight: 40, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, color: COLORS.t1, fontSize: 13 },
+    clearBtn: { position: 'absolute', right: 12, top: 13 },
+    chipRow: { flexDirection: 'row', gap: 6, paddingHorizontal: SPACING.xl, marginBottom: 14 },
+    listContent: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
+    userCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 8 },
+    userInfo: { flex: 1 },
+    userName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
+    userEmail: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    userMeta: { alignItems: 'flex-end', gap: 4 },
+    statusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    statusText: { fontSize: 9, fontWeight: FONT.semibold, textTransform: 'capitalize' },
+    errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
+    errorText: { fontSize: 14, color: COLORS.t3, marginBottom: 12, textAlign: 'center' },
+    retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+    retryText: { fontSize: 13, color: COLORS.silver },
+    empty: { alignItems: 'center', paddingVertical: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
+    emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -124,7 +154,7 @@ export default function UserManagementScreen({ route, navigation }) {
             </View>
           }
           renderItem={({ item }) => {
-            const statusColor = item.status === 'ACTIVE' ? COLORS.green : item.status === 'PENDING' ? COLORS.orange : COLORS.red;
+            const itemStatusColor = item.status === 'ACTIVE' ? COLORS.green : item.status === 'PENDING' ? COLORS.orange : COLORS.red;
             return (
               <TouchableOpacity
                 onPress={() => navigation.navigate('UserDetail', { userId: item.id })}
@@ -139,7 +169,7 @@ export default function UserManagementScreen({ route, navigation }) {
                   <Badge label={roleLabel(item.role)} color={roleColor(item.role)} />
                   <View style={styles.statusRow}>
                     <StatusDot status={item.status?.toLowerCase()} />
-                    <Text style={[styles.statusText, { color: statusColor }]}>{item.status?.toLowerCase()}</Text>
+                    <Text style={[styles.statusText, { color: itemStatusColor }]}>{item.status?.toLowerCase()}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -150,30 +180,3 @@ export default function UserManagementScreen({ route, navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  count: { fontSize: 12, color: COLORS.t3 },
-  searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 12, position: 'relative' },
-  searchIcon: { position: 'absolute', left: 14, top: 14, zIndex: 1 },
-  searchInput: { width: '100%', paddingVertical: 12, paddingLeft: 40, paddingRight: 40, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, color: COLORS.t1, fontSize: 13 },
-  clearBtn: { position: 'absolute', right: 12, top: 13 },
-  chipRow: { flexDirection: 'row', gap: 6, paddingHorizontal: SPACING.xl, marginBottom: 14 },
-  listContent: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
-  userCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 8 },
-  userInfo: { flex: 1 },
-  userName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
-  userEmail: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-  userMeta: { alignItems: 'flex-end', gap: 4 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statusText: { fontSize: 9, fontWeight: FONT.semibold, textTransform: 'capitalize' },
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  errorText: { fontSize: 14, color: COLORS.t3, marginBottom: 12, textAlign: 'center' },
-  retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
-  retryText: { fontSize: 13, color: COLORS.silver },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
-  emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
-});

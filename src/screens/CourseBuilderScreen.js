@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Switch, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Input, Button, Card, Toast, useToast } from '../components/UI';
 import { apiCreateCourse } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CourseBuilderScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [form, setForm] = useState({
     title: '',
     code: '',
@@ -74,6 +76,42 @@ export default function CourseBuilderScreen({ navigation }) {
 
   const handleCreate = () => submit(form.publishNow);
   const handleSaveDraft = () => submit(false);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    scrollContent: { paddingHorizontal: SPACING.xxl, paddingBottom: 20 },
+    label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
+    imageUpload: { marginBottom: 16, borderRadius: RADIUS.lg, overflow: 'hidden' },
+    imagePlaceholder: { borderWidth: 2, borderStyle: 'dashed', borderColor: '#333', borderRadius: RADIUS.lg, padding: 32, alignItems: 'center', backgroundColor: '#0A0A0A' },
+    imagePlaceholderText: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginTop: 8 },
+    imagePlaceholderHint: { fontSize: 10, color: COLORS.t3, marginTop: 4, opacity: 0.6 },
+    imagePreviewWrap: { position: 'relative' },
+    imagePreview: { width: '100%', height: 180, borderRadius: RADIUS.lg },
+    removeImage: { position: 'absolute', top: 8, right: 8 },
+    toggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.border, marginBottom: 16 },
+    toggleLabel: { fontSize: 13, color: COLORS.t1, fontWeight: FONT.medium },
+    toggleDesc: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
+    infoText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 18 },
+    buttonRow: { flexDirection: 'row', gap: 10 },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 10, marginBottom: 8 },
+    errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
+  }), [COLORS]);
+
+  const discardModal = useMemo(() => StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
+    box: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
+    title: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 10 },
+    message: { fontSize: 13, color: COLORS.t3, lineHeight: 20, marginBottom: 24 },
+    actions: { flexDirection: 'row', gap: 10 },
+    btn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
+    cancelBtn: { borderColor: COLORS.border },
+    cancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
+    dangerBtn: { borderColor: COLORS.red, backgroundColor: COLORS.red + '18' },
+    dangerText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.red },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -185,38 +223,3 @@ export default function CourseBuilderScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  scrollContent: { paddingHorizontal: SPACING.xxl, paddingBottom: 20 },
-  label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
-  imageUpload: { marginBottom: 16, borderRadius: RADIUS.lg, overflow: 'hidden' },
-  imagePlaceholder: { borderWidth: 2, borderStyle: 'dashed', borderColor: '#333', borderRadius: RADIUS.lg, padding: 32, alignItems: 'center', backgroundColor: '#0A0A0A' },
-  imagePlaceholderText: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginTop: 8 },
-  imagePlaceholderHint: { fontSize: 10, color: COLORS.t3, marginTop: 4, opacity: 0.6 },
-  imagePreviewWrap: { position: 'relative' },
-  imagePreview: { width: '100%', height: 180, borderRadius: RADIUS.lg },
-  removeImage: { position: 'absolute', top: 8, right: 8 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: COLORS.border, marginBottom: 16 },
-  toggleLabel: { fontSize: 13, color: COLORS.t1, fontWeight: FONT.medium },
-  toggleDesc: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
-  infoText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 18 },
-  buttonRow: { flexDirection: 'row', gap: 10 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 10, marginBottom: 8 },
-  errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
-});
-
-const discardModal = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  box: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
-  title: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 10 },
-  message: { fontSize: 13, color: COLORS.t3, lineHeight: 20, marginBottom: 24 },
-  actions: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
-  cancelBtn: { borderColor: COLORS.border },
-  cancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
-  dangerBtn: { borderColor: COLORS.red, backgroundColor: COLORS.red + '18' },
-  dangerText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.red },
-});

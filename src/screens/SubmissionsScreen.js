@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   ActivityIndicator, RefreshControl, Modal,
@@ -6,18 +6,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Avatar, Button, Toast, useToast } from '../components/UI';
 import { apiCourseSubmissions, apiGradeSubmission } from '../services/api';
-
-const STATUS_COLOR = {
-  SUBMITTED: COLORS.accent,
-  GRADED:    COLORS.green,
-  RETURNED:  COLORS.blue,
-};
+import { useTheme } from '../context/ThemeContext';
 
 export default function SubmissionsScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const { courseId } = route.params || {};
+
+  const STATUS_COLOR = useMemo(() => ({
+    SUBMITTED: COLORS.accent,
+    GRADED:    COLORS.green,
+    RETURNED:  COLORS.blue,
+  }), [COLORS]);
 
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -76,6 +78,49 @@ export default function SubmissionsScreen({ route, navigation }) {
     SUBMITTED: submissions.filter(s => s.status === 'SUBMITTED').length,
     GRADED: submissions.filter(s => s.status === 'GRADED').length,
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 12 },
+    headerTitle: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, paddingVertical: 12 },
+    filterChip: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
+    filterChipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+    filterChipText: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium },
+    filterChipTextActive: { color: '#000', fontWeight: FONT.bold },
+    card: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16 },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    studentName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
+    lessonName: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    statusBadge: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: 10 },
+    statusText: { fontSize: 10, fontWeight: FONT.bold },
+    submissionText: { fontSize: 12, color: COLORS.t2, lineHeight: 18, marginBottom: 8, backgroundColor: '#0A0A0A', padding: 10, borderRadius: RADIUS.md },
+    fileLink: { fontSize: 11, color: COLORS.blue, marginBottom: 8 },
+    cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    submittedAt: { fontSize: 10, color: COLORS.t3, flex: 1 },
+    gradePill: { fontSize: 13, fontWeight: FONT.extrabold },
+    gradeBtn: { backgroundColor: COLORS.accent, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 10 },
+    gradeBtnText: { fontSize: 12, fontWeight: FONT.bold, color: '#000' },
+    feedbackBox: { marginTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 },
+    feedbackLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 3 },
+    feedbackText: { fontSize: 12, color: COLORS.t2 },
+    empty: { alignItems: 'center', paddingTop: 60 },
+    emptyText: { fontSize: 14, color: COLORS.t3, marginTop: 12 },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
+    modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl },
+    modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
+    modalTitle: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 4 },
+    modalSub: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
+    modalLabel: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
+    modalInput: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
+    modalInputMulti: { height: 90, textAlignVertical: 'top', paddingTop: 12 },
+    modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 24 },
+    modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
+    modalBtnPrimary: { backgroundColor: COLORS.accent },
+    modalBtnPrimaryText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
+    modalBtnSecondary: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
+    modalBtnSecondaryText: { fontSize: 14, fontWeight: FONT.medium, color: COLORS.t2 },
+  }), [COLORS]);
 
   const renderItem = ({ item }) => {
     const studentName = `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim();
@@ -244,45 +289,3 @@ export default function SubmissionsScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 12 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, paddingVertical: 12 },
-  filterChip: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
-  filterChipActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  filterChipText: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium },
-  filterChipTextActive: { color: '#000', fontWeight: FONT.bold },
-  card: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  studentName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
-  lessonName: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-  statusBadge: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: 10 },
-  statusText: { fontSize: 10, fontWeight: FONT.bold },
-  submissionText: { fontSize: 12, color: COLORS.t2, lineHeight: 18, marginBottom: 8, backgroundColor: '#0A0A0A', padding: 10, borderRadius: RADIUS.md },
-  fileLink: { fontSize: 11, color: COLORS.blue, marginBottom: 8 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  submittedAt: { fontSize: 10, color: COLORS.t3, flex: 1 },
-  gradePill: { fontSize: 13, fontWeight: FONT.extrabold },
-  gradeBtn: { backgroundColor: COLORS.accent, paddingVertical: 6, paddingHorizontal: 14, borderRadius: 10 },
-  gradeBtnText: { fontSize: 12, fontWeight: FONT.bold, color: '#000' },
-  feedbackBox: { marginTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 10 },
-  feedbackLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 3 },
-  feedbackText: { fontSize: 12, color: COLORS.t2 },
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 14, color: COLORS.t3, marginTop: 12 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl },
-  modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
-  modalTitle: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 4 },
-  modalSub: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
-  modalLabel: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
-  modalInput: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
-  modalInputMulti: { height: 90, textAlignVertical: 'top', paddingTop: 12 },
-  modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 24 },
-  modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
-  modalBtnPrimary: { backgroundColor: COLORS.accent },
-  modalBtnPrimaryText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-  modalBtnSecondary: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
-  modalBtnSecondaryText: { fontSize: 14, fontWeight: FONT.medium, color: COLORS.t2 },
-});

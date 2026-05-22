@@ -1,25 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Avatar, Card, Button, Badge, StatusDot, Toast, useToast, ConfirmModal } from '../components/UI';
 import { apiGetUser, apiChangeRole, apiChangeStatus } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-
-const roleColor = (role) => ({
-  STUDENT: COLORS.blue, LECTURER: COLORS.teal, FACULTY: COLORS.orange, SUPER_ADMIN: COLORS.pink,
-}[role] || COLORS.blue);
 
 const roleLabel = (role) => ({
   STUDENT: 'Student', LECTURER: 'Lecturer', FACULTY: 'Admin', SUPER_ADMIN: 'Super Admin',
 }[role] || role);
 
-const statusColor = (status) => ({
-  ACTIVE: COLORS.green, PENDING: COLORS.orange, SUSPENDED: COLORS.red, DEACTIVATED: COLORS.t3,
-}[status] || COLORS.t3);
-
 export default function UserDetailScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const { isAdmin } = useAuth();
   const userId   = route.params?.userId;
   const preloaded = route.params?.user;
@@ -33,6 +27,14 @@ export default function UserDetailScreen({ route, navigation }) {
   const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm, danger }
   // Role picker modal
   const [roleModal, setRoleModal] = useState(false);
+
+  const roleColor = (role) => ({
+    STUDENT: COLORS.blue, LECTURER: COLORS.teal, FACULTY: COLORS.orange, SUPER_ADMIN: COLORS.pink,
+  }[role] || COLORS.blue);
+
+  const statusColor = (status) => ({
+    ACTIVE: COLORS.green, PENDING: COLORS.orange, SUSPENDED: COLORS.red, DEACTIVATED: COLORS.t3,
+  }[status] || COLORS.t3);
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -90,6 +92,31 @@ export default function UserDetailScreen({ route, navigation }) {
       setActing(false);
     }
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    scrollContent: { paddingHorizontal: SPACING.xl },
+    profileCard: { alignItems: 'center', paddingVertical: 24, marginBottom: 16 },
+    userName: { fontSize: 20, fontWeight: FONT.extrabold, color: COLORS.t1, marginTop: 12 },
+    userEmail: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
+    badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
+    statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10 },
+    statusText: { fontSize: 11, fontWeight: FONT.semibold, textTransform: 'capitalize' },
+    infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 10 },
+    infoRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    infoLabel: { fontSize: 12, color: COLORS.t3, flex: 1 },
+    infoValue: { fontSize: 12, color: COLORS.silver, fontWeight: FONT.semibold },
+    actionsTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 20, marginBottom: 12 },
+    roleOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    roleSheet: { backgroundColor: '#1C1C1C', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
+    roleSheetTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 4 },
+    roleSheetSub: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
+    roleOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    roleColor: { width: 10, height: 10, borderRadius: 5 },
+    roleOptionText: { flex: 1, fontSize: 14, color: COLORS.t1 },
+  }), [COLORS]);
 
   if (loading) {
     return (
@@ -239,28 +266,3 @@ export default function UserDetailScreen({ route, navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  scrollContent: { paddingHorizontal: SPACING.xl },
-  profileCard: { alignItems: 'center', paddingVertical: 24, marginBottom: 16 },
-  userName: { fontSize: 20, fontWeight: FONT.extrabold, color: COLORS.t1, marginTop: 12 },
-  userEmail: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
-  statusPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10 },
-  statusText: { fontSize: 11, fontWeight: FONT.semibold, textTransform: 'capitalize' },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 10 },
-  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  infoLabel: { fontSize: 12, color: COLORS.t3, flex: 1 },
-  infoValue: { fontSize: 12, color: COLORS.silver, fontWeight: FONT.semibold },
-  actionsTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 20, marginBottom: 12 },
-  roleOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  roleSheet: { backgroundColor: '#1C1C1C', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
-  roleSheetTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 4 },
-  roleSheetSub: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
-  roleOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  roleColor: { width: 10, height: 10, borderRadius: 5 },
-  roleOptionText: { flex: 1, fontSize: 14, color: COLORS.t1 },
-});

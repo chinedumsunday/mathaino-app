@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Avatar, Input, Button, Toast, useToast } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function EditProfileScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const { user, updateUser } = useAuth();
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
@@ -73,6 +75,25 @@ export default function EditProfileScreen({ navigation }) {
       setTimeout(() => navigation.goBack(), 1500);
     }
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    saveBtn: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.accent },
+    scrollContent: { paddingHorizontal: SPACING.xxl },
+    avatarWrap: { alignItems: 'center', marginBottom: 28 },
+    cameraIcon: { position: 'absolute', bottom: 20, right: '35%', width: 28, height: 28, borderRadius: 10, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.bg },
+    changeText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.semibold, marginTop: 8 },
+    label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 12, marginBottom: 14 },
+    errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    avatarSheet: { backgroundColor: '#1C1C1C', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
+    sheetTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 16, textAlign: 'center' },
+    sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    sheetOptionText: { fontSize: 14, color: COLORS.t1 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -155,21 +176,3 @@ export default function EditProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  saveBtn: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.accent },
-  scrollContent: { paddingHorizontal: SPACING.xxl },
-  avatarWrap: { alignItems: 'center', marginBottom: 28 },
-  cameraIcon: { position: 'absolute', bottom: 20, right: '35%', width: 28, height: 28, borderRadius: 10, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.bg },
-  changeText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.semibold, marginTop: 8 },
-  label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 12, marginBottom: 14 },
-  errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  avatarSheet: { backgroundColor: '#1C1C1C', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
-  sheetTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 16, textAlign: 'center' },
-  sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  sheetOptionText: { fontSize: 14, color: COLORS.t1 },
-});

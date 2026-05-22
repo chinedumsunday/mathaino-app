@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Avatar, Button, Card } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const ROLE_LABELS = {
   STUDENT: 'Student',
@@ -12,19 +13,53 @@ const ROLE_LABELS = {
   FACULTY: 'Admin',
   SUPER_ADMIN: 'Super Admin',
 };
-const ROLE_COLORS = {
-  STUDENT: COLORS.blue,
-  LECTURER: COLORS.teal,
-  FACULTY: COLORS.orange,
-  SUPER_ADMIN: COLORS.pink,
-};
 
 export default function ProfileScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const { user, logout, canManageUsers, canCreateCourses, isLecturer } = useAuth();
 
   // All hooks MUST come before any early return
   const [loggingOut, setLoggingOut] = React.useState(false);
   const [logoutVisible, setLogoutVisible] = React.useState(false);
+
+  const ROLE_COLORS = useMemo(() => ({
+    STUDENT: COLORS.blue,
+    LECTURER: COLORS.teal,
+    FACULTY: COLORS.orange,
+    SUPER_ADMIN: COLORS.pink,
+  }), [COLORS]);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    profileHeader: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: SPACING.xl },
+    name: { fontSize: 18, fontWeight: FONT.extrabold, color: COLORS.t1, marginTop: 12 },
+    email: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
+    roleBadge: { marginTop: 8, paddingVertical: 5, paddingHorizontal: 14, borderRadius: 12 },
+    roleText: { fontSize: 11, fontWeight: FONT.bold },
+    statsRow: { flexDirection: 'row', gap: 24, marginTop: 16 },
+    stat: { alignItems: 'center' },
+    statNum: { fontSize: 16, fontWeight: FONT.extrabold },
+    statLabel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
+    content: { paddingHorizontal: SPACING.xl },
+    infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16 },
+    borderBottom: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    infoLabel: { fontSize: 12, color: COLORS.t3 },
+    infoValue: { fontSize: 12, color: COLORS.silver, fontWeight: FONT.semibold, maxWidth: '60%', textAlign: 'right' },
+    menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 12 },
+    menuLabel: { flex: 1, fontSize: 13, color: COLORS.t1 },
+    // Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center', padding: 32 },
+    modalCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.xl, padding: 28, width: '100%', maxWidth: 340, alignItems: 'center' },
+    modalIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.red + '18', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    modalTitle: { fontSize: 17, fontWeight: FONT.extrabold, color: COLORS.t1, marginBottom: 8 },
+    modalMessage: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+    modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
+    modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
+    modalBtnCancel: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
+    modalBtnCancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
+    modalBtnConfirm: { backgroundColor: COLORS.red },
+    modalBtnConfirmText: { fontSize: 14, fontWeight: FONT.bold, color: '#fff' },
+  }), [COLORS]);
 
   if (!user) return (
     <SafeAreaView style={styles.container}>
@@ -197,34 +232,3 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  profileHeader: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: SPACING.xl },
-  name: { fontSize: 18, fontWeight: FONT.extrabold, color: COLORS.t1, marginTop: 12 },
-  email: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
-  roleBadge: { marginTop: 8, paddingVertical: 5, paddingHorizontal: 14, borderRadius: 12 },
-  roleText: { fontSize: 11, fontWeight: FONT.bold },
-  statsRow: { flexDirection: 'row', gap: 24, marginTop: 16 },
-  stat: { alignItems: 'center' },
-  statNum: { fontSize: 16, fontWeight: FONT.extrabold },
-  statLabel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
-  content: { paddingHorizontal: SPACING.xl },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16 },
-  borderBottom: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  infoLabel: { fontSize: 12, color: COLORS.t3 },
-  infoValue: { fontSize: 12, color: COLORS.silver, fontWeight: FONT.semibold, maxWidth: '60%', textAlign: 'right' },
-  menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, gap: 12 },
-  menuLabel: { flex: 1, fontSize: 13, color: COLORS.t1 },
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  modalCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.xl, padding: 28, width: '100%', maxWidth: 340, alignItems: 'center' },
-  modalIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.red + '18', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 17, fontWeight: FONT.extrabold, color: COLORS.t1, marginBottom: 8 },
-  modalMessage: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
-  modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
-  modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
-  modalBtnCancel: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
-  modalBtnCancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
-  modalBtnConfirm: { backgroundColor: COLORS.red },
-  modalBtnConfirmText: { fontSize: 14, fontWeight: FONT.bold, color: '#fff' },
-});

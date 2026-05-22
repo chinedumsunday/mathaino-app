@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl, Modal,
@@ -6,9 +6,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
 import { Avatar, ProgressBar, Card, Button, Badge, Toast, useToast } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   apiGetCourse, apiEnroll, apiCreateModule, apiCreateContent,
   apiGetCertificate, apiListDiscussions, apiCreateDiscussion,
@@ -16,20 +17,13 @@ import {
   apiTogglePublish,
 } from '../services/api';
 
-const CONTENT_ICON = {
-  VIDEO:        { name: 'play-circle',      color: COLORS.teal },
-  QUIZ:         { name: 'checkmark-circle', color: COLORS.accent },
-  DOCUMENT:     { name: 'document-text',    color: COLORS.blue },
-  ASSIGNMENT:   { name: 'create',           color: COLORS.pink },
-  LIVE_SESSION: { name: 'radio',            color: COLORS.red },
-};
-
 const CONTENT_TYPES = ['VIDEO', 'DOCUMENT', 'QUIZ', 'ASSIGNMENT'];
 
 // ── Default empty quiz question ──
 const emptyQ = () => ({ q: '', options: ['', '', '', ''], correct: 0 });
 
 export default function CourseDetailScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const { user, addXp } = useAuth();
   const courseId  = route.params?.courseId;
   const preloaded = route.params?.course;
@@ -56,6 +50,126 @@ export default function CourseDetailScreen({ route, navigation }) {
 
   const [deleteDiscId, setDeleteDiscId] = useState(null);
   const { toast, showToast } = useToast();
+
+  const CONTENT_ICON = useMemo(() => ({
+    VIDEO:        { name: 'play-circle',      color: COLORS.teal },
+    QUIZ:         { name: 'checkmark-circle', color: COLORS.accent },
+    DOCUMENT:     { name: 'document-text',    color: COLORS.blue },
+    ASSIGNMENT:   { name: 'create',           color: COLORS.pink },
+    LIVE_SESSION: { name: 'radio',            color: COLORS.red },
+  }), [COLORS]);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    hero: { height: 150, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
+    heroEmoji: { fontSize: 64 },
+    backBtn: { position: 'absolute', top: 14, left: 14 },
+    content: { padding: SPACING.xl },
+    title: { fontSize: 20, fontWeight: FONT.extrabold, color: COLORS.t1 },
+    code: { fontSize: 12, color: COLORS.t3, marginTop: 2, marginBottom: 8 },
+    desc: { fontSize: 12, color: COLORS.t2, lineHeight: 20, marginBottom: 14 },
+    lecturerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+    lecName: { fontSize: 13, color: COLORS.t1, fontWeight: FONT.semibold },
+    lecDept: { fontSize: 11, color: COLORS.t3 },
+    statsCard: { flexDirection: 'row', backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 14, marginBottom: 18 },
+    statItem: { flex: 1, alignItems: 'center' },
+    statBorder: { borderRightWidth: 1, borderRightColor: COLORS.border },
+    statNum: { fontSize: 18, fontWeight: FONT.extrabold },
+    statLabel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
+    certBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.accent + '15', borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.lg, padding: 14, marginBottom: 16 },
+    certEmoji: { fontSize: 28 },
+    certTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.accent },
+    certSub: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
+    tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: 18 },
+    tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+    tabActive: { borderBottomColor: COLORS.accent },
+    tabText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.regular },
+    tabTextActive: { color: COLORS.t1, fontWeight: FONT.bold },
+    moduleHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14 },
+    moduleHeaderExpanded: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+    moduleNum: { fontSize: 12, fontWeight: FONT.extrabold, color: COLORS.accent, minWidth: 24 },
+    moduleTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, flex: 1 },
+    moduleLessonCount: { fontSize: 10, color: COLORS.t3, marginRight: 4 },
+    lessonList: { backgroundColor: '#0A0A0A', borderWidth: 1, borderTopWidth: 0, borderColor: COLORS.border, borderBottomLeftRadius: RADIUS.lg, borderBottomRightRadius: RADIUS.lg, paddingVertical: 6 },
+    lessonRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 16, paddingLeft: 50 },
+    lessonTitle: { fontSize: 12, color: COLORS.t2, flex: 1 },
+    lessonDone: { textDecorationLine: 'line-through', color: COLORS.green },
+    lessonDur: { fontSize: 10, color: COLORS.t3 },
+    addLessonBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 50, borderTopWidth: 1, borderTopColor: COLORS.border },
+    addLessonBtnText: { fontSize: 12, color: COLORS.teal, fontWeight: FONT.medium },
+    addModuleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.lg, borderStyle: 'dashed', marginTop: 4 },
+    addModuleBtnText: { fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
+    submissionsLink: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14, marginTop: 12 },
+    submissionsLinkText: { flex: 1, fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
+    publishBanner: { flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS.lg, padding: 12, marginBottom: 16, borderWidth: 1 },
+    publishedBanner: { backgroundColor: COLORS.green + '10', borderColor: COLORS.green + '30' },
+    draftBanner: { backgroundColor: COLORS.orange + '10', borderColor: COLORS.orange + '30' },
+    publishBannerText: { fontSize: 12, fontWeight: FONT.semibold },
+    publishBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 10 },
+    publishBtnText: { fontSize: 12, fontWeight: FONT.bold },
+    tipBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#0A0A1A', borderRadius: RADIUS.md, padding: 12, marginTop: 10, marginBottom: 4 },
+    tipText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 17 },
+    bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, paddingHorizontal: SPACING.xl, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
+    completedBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    completedBadgeText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.teal },
+    certBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.accent, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12 },
+    certBtnText: { fontSize: 13, fontWeight: FONT.bold, color: '#000' },
+    // Discussion
+    postInput: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 10, marginBottom: 16 },
+    postTextInput: { flex: 1, color: COLORS.t1, fontSize: 13, maxHeight: 100 },
+    postBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
+    discCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14, marginBottom: 10 },
+    discHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    discAuthor: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    discTime: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    discBody: { fontSize: 13, color: COLORS.t2, lineHeight: 20, marginBottom: 10 },
+    discReplyToggle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    discReplyToggleText: { fontSize: 11, color: COLORS.t3 },
+    repliesSection: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+    replyRow: { flexDirection: 'row', marginBottom: 10 },
+    replyAuthor: { fontSize: 11, fontWeight: FONT.semibold, color: COLORS.t2 },
+    replyBody: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
+    replyInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+    replyTextInput: { flex: 1, backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: COLORS.t1 },
+    replyBtn: { padding: 8 },
+    // Modal
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
+    modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl, maxHeight: '90%' },
+    modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
+    modalTitle: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 20 },
+    modalLabel: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
+    modalInput: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
+    modalInputMulti: { height: 90, textAlignVertical: 'top', paddingTop: 12 },
+    typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    typeChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#111' },
+    typeChipText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium },
+    modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 24 },
+    modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
+    modalBtnPrimary: { backgroundColor: COLORS.accent },
+    modalBtnPrimaryText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
+    modalBtnSecondary: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
+    modalBtnSecondaryText: { fontSize: 14, fontWeight: FONT.medium, color: COLORS.t2 },
+    // Quiz builder
+    questionBlock: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 },
+    questionNum: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.accent },
+    radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: COLORS.t3, alignItems: 'center', justifyContent: 'center' },
+    radioOuterActive: { borderColor: COLORS.accent },
+    radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.accent },
+    addQuestionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, justifyContent: 'center', borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.md, borderStyle: 'dashed' },
+    addQuestionBtnText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.semibold },
+    // Confirm dialog
+    confirmOverlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
+    confirmBox: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
+    confirmTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 10 },
+    confirmMsg: { fontSize: 13, color: COLORS.t3, lineHeight: 20, marginBottom: 24 },
+    confirmActions: { flexDirection: 'row', gap: 10 },
+    confirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
+    confirmCancel: { borderColor: COLORS.border },
+    confirmCancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
+    confirmDanger: { borderColor: COLORS.red, backgroundColor: COLORS.red + '18' },
+    confirmDangerText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.red },
+  }), [COLORS]);
 
   // Add Module modal
   const [modModal, setModModal] = useState({ visible: false, title: '' });
@@ -895,114 +1009,3 @@ export default function CourseDetailScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  hero: { height: 150, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
-  heroEmoji: { fontSize: 64 },
-  backBtn: { position: 'absolute', top: 14, left: 14 },
-  content: { padding: SPACING.xl },
-  title: { fontSize: 20, fontWeight: FONT.extrabold, color: COLORS.t1 },
-  code: { fontSize: 12, color: COLORS.t3, marginTop: 2, marginBottom: 8 },
-  desc: { fontSize: 12, color: COLORS.t2, lineHeight: 20, marginBottom: 14 },
-  lecturerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  lecName: { fontSize: 13, color: COLORS.t1, fontWeight: FONT.semibold },
-  lecDept: { fontSize: 11, color: COLORS.t3 },
-  statsCard: { flexDirection: 'row', backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 14, marginBottom: 18 },
-  statItem: { flex: 1, alignItems: 'center' },
-  statBorder: { borderRightWidth: 1, borderRightColor: COLORS.border },
-  statNum: { fontSize: 18, fontWeight: FONT.extrabold },
-  statLabel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
-  certBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.accent + '15', borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.lg, padding: 14, marginBottom: 16 },
-  certEmoji: { fontSize: 28 },
-  certTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.accent },
-  certSub: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
-  tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: 18 },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: COLORS.accent },
-  tabText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.regular },
-  tabTextActive: { color: COLORS.t1, fontWeight: FONT.bold },
-  moduleHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14 },
-  moduleHeaderExpanded: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
-  moduleNum: { fontSize: 12, fontWeight: FONT.extrabold, color: COLORS.accent, minWidth: 24 },
-  moduleTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, flex: 1 },
-  moduleLessonCount: { fontSize: 10, color: COLORS.t3, marginRight: 4 },
-  lessonList: { backgroundColor: '#0A0A0A', borderWidth: 1, borderTopWidth: 0, borderColor: COLORS.border, borderBottomLeftRadius: RADIUS.lg, borderBottomRightRadius: RADIUS.lg, paddingVertical: 6 },
-  lessonRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 16, paddingLeft: 50 },
-  lessonTitle: { fontSize: 12, color: COLORS.t2, flex: 1 },
-  lessonDone: { textDecorationLine: 'line-through', color: COLORS.green },
-  lessonDur: { fontSize: 10, color: COLORS.t3 },
-  addLessonBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 50, borderTopWidth: 1, borderTopColor: COLORS.border },
-  addLessonBtnText: { fontSize: 12, color: COLORS.teal, fontWeight: FONT.medium },
-  addModuleBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.lg, borderStyle: 'dashed', marginTop: 4 },
-  addModuleBtnText: { fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
-  submissionsLink: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14, marginTop: 12 },
-  submissionsLinkText: { flex: 1, fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
-  publishBanner: { flexDirection: 'row', alignItems: 'center', borderRadius: RADIUS.lg, padding: 12, marginBottom: 16, borderWidth: 1 },
-  publishedBanner: { backgroundColor: COLORS.green + '10', borderColor: COLORS.green + '30' },
-  draftBanner: { backgroundColor: COLORS.orange + '10', borderColor: COLORS.orange + '30' },
-  publishBannerText: { fontSize: 12, fontWeight: FONT.semibold },
-  publishBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 10 },
-  publishBtnText: { fontSize: 12, fontWeight: FONT.bold },
-  tipBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#0A0A1A', borderRadius: RADIUS.md, padding: 12, marginTop: 10, marginBottom: 4 },
-  tipText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 17 },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, paddingHorizontal: SPACING.xl, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
-  completedBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  completedBadgeText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.teal },
-  certBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.accent, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12 },
-  certBtnText: { fontSize: 13, fontWeight: FONT.bold, color: '#000' },
-  // Discussion
-  postInput: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 10, marginBottom: 16 },
-  postTextInput: { flex: 1, color: COLORS.t1, fontSize: 13, maxHeight: 100 },
-  postBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
-  discCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 14, marginBottom: 10 },
-  discHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  discAuthor: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  discTime: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  discBody: { fontSize: 13, color: COLORS.t2, lineHeight: 20, marginBottom: 10 },
-  discReplyToggle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  discReplyToggleText: { fontSize: 11, color: COLORS.t3 },
-  repliesSection: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
-  replyRow: { flexDirection: 'row', marginBottom: 10 },
-  replyAuthor: { fontSize: 11, fontWeight: FONT.semibold, color: COLORS.t2 },
-  replyBody: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
-  replyInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  replyTextInput: { flex: 1, backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: COLORS.t1 },
-  replyBtn: { padding: 8 },
-  // Modal
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl, maxHeight: '90%' },
-  modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
-  modalTitle: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 20 },
-  modalLabel: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
-  modalInput: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
-  modalInputMulti: { height: 90, textAlignVertical: 'top', paddingTop: 12 },
-  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  typeChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#111' },
-  typeChipText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium },
-  modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 24 },
-  modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
-  modalBtnPrimary: { backgroundColor: COLORS.accent },
-  modalBtnPrimaryText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-  modalBtnSecondary: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
-  modalBtnSecondaryText: { fontSize: 14, fontWeight: FONT.medium, color: COLORS.t2 },
-  // Quiz builder
-  questionBlock: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 },
-  questionNum: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.accent },
-  radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: COLORS.t3, alignItems: 'center', justifyContent: 'center' },
-  radioOuterActive: { borderColor: COLORS.accent },
-  radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.accent },
-  addQuestionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, justifyContent: 'center', borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.md, borderStyle: 'dashed' },
-  addQuestionBtnText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.semibold },
-  // Confirm dialog
-  confirmOverlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  confirmBox: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
-  confirmTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 10 },
-  confirmMsg: { fontSize: 13, color: COLORS.t3, lineHeight: 20, marginBottom: 24 },
-  confirmActions: { flexDirection: 'row', gap: 10 },
-  confirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
-  confirmCancel: { borderColor: COLORS.border },
-  confirmCancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
-  confirmDanger: { borderColor: COLORS.red, backgroundColor: COLORS.red + '18' },
-  confirmDangerText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.red },
-});

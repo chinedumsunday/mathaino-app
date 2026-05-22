@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl, TextInput, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Card, Button, Badge, Toast, useToast } from '../components/UI';
 import { apiListCourses, apiEnroll, apiMyEnrollments } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function BrowseScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [courses, setCourses] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState(new Set());
   const [enrolling, setEnrolling] = useState(null);
@@ -94,6 +96,47 @@ export default function BrowseScreen({ navigation }) {
         c.description?.toLowerCase().includes(search.toLowerCase())
       )
     : courses;
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.xl, paddingVertical: 14 },
+    title: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 8, position: 'relative' },
+    searchIcon: { position: 'absolute', left: 14, top: 13, zIndex: 1 },
+    searchInput: { width: '100%', paddingVertical: 12, paddingLeft: 40, paddingRight: 36, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, color: COLORS.t1, fontSize: 13 },
+    clearBtn: { position: 'absolute', right: 12, top: 12 },
+    scrollContent: { paddingHorizontal: SPACING.xl },
+    subtitle: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
+    courseHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 12 },
+    courseEmoji: { fontSize: 36 },
+    courseTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1 },
+    courseSub: { fontSize: 11, color: COLORS.t3, marginTop: 2 },
+    courseDesc: { fontSize: 12, color: COLORS.t2, lineHeight: 20, marginBottom: 12 },
+    statsRow: { flexDirection: 'row', gap: 16, marginBottom: 14 },
+    statItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    statText: { fontSize: 11, color: COLORS.t3 },
+    errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+    errorText: { fontSize: 14, color: COLORS.t3, marginBottom: 12 },
+    retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+    retryText: { fontSize: 13, color: COLORS.silver },
+    empty: { alignItems: 'center', paddingVertical: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
+    emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
+  }), [COLORS]);
+
+  const modal = useMemo(() => StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
+    box: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24, alignItems: 'center' },
+    title: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 6, textAlign: 'center' },
+    courseName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.accent, marginBottom: 10, textAlign: 'center' },
+    message: { fontSize: 12, color: COLORS.t3, lineHeight: 18, marginBottom: 24, textAlign: 'center' },
+    actions: { flexDirection: 'row', gap: 10, width: '100%' },
+    btn: { flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
+    cancelBtn: { borderColor: COLORS.border },
+    cancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
+    enrollBtn: { borderColor: COLORS.accent, backgroundColor: COLORS.accent },
+    enrollText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -228,43 +271,3 @@ export default function BrowseScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.xl, paddingVertical: 14 },
-  title: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 8, position: 'relative' },
-  searchIcon: { position: 'absolute', left: 14, top: 13, zIndex: 1 },
-  searchInput: { width: '100%', paddingVertical: 12, paddingLeft: 40, paddingRight: 36, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, color: COLORS.t1, fontSize: 13 },
-  clearBtn: { position: 'absolute', right: 12, top: 12 },
-  scrollContent: { paddingHorizontal: SPACING.xl },
-  subtitle: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
-  courseHeader: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 12 },
-  courseEmoji: { fontSize: 36 },
-  courseTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1 },
-  courseSub: { fontSize: 11, color: COLORS.t3, marginTop: 2 },
-  courseDesc: { fontSize: 12, color: COLORS.t2, lineHeight: 20, marginBottom: 12 },
-  statsRow: { flexDirection: 'row', gap: 16, marginBottom: 14 },
-  statItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statText: { fontSize: 11, color: COLORS.t3 },
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  errorText: { fontSize: 14, color: COLORS.t3, marginBottom: 12 },
-  retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
-  retryText: { fontSize: 13, color: COLORS.silver },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
-  emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
-});
-
-const modal = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
-  box: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24, alignItems: 'center' },
-  title: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 6, textAlign: 'center' },
-  courseName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.accent, marginBottom: 10, textAlign: 'center' },
-  message: { fontSize: 12, color: COLORS.t3, lineHeight: 18, marginBottom: 24, textAlign: 'center' },
-  actions: { flexDirection: 'row', gap: 10, width: '100%' },
-  btn: { flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center', borderWidth: 1 },
-  cancelBtn: { borderColor: COLORS.border },
-  cancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
-  enrollBtn: { borderColor: COLORS.accent, backgroundColor: COLORS.accent },
-  enrollText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-});

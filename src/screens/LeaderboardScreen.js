@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Avatar, Chip } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { apiGetLeaderboard } from '../services/api';
@@ -16,6 +17,7 @@ const isOnline = (lastActiveAt) => {
 };
 
 export default function LeaderboardScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [period, setPeriod] = useState('all-time');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,39 @@ export default function LeaderboardScreen({ navigation }) {
   const rest = data.slice(3);
   const podiumHeights = [100, 140, 80];
   const medals = ['🥈', '🥇', '🥉'];
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, marginBottom: 18 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+    errorText: { fontSize: 14, color: COLORS.t3, marginTop: 12, marginBottom: 12 },
+    retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+    retryText: { fontSize: 13, color: COLORS.silver },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
+    emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4, textAlign: 'center', paddingHorizontal: 40 },
+    podium: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 8, paddingHorizontal: SPACING.xl, paddingTop: 10, marginBottom: 24 },
+    podiumItem: { flex: 1, alignItems: 'center' },
+    podiumName: { fontSize: 12, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 6 },
+    podiumXp: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
+    podiumBar: { width: '100%', backgroundColor: COLORS.card, borderTopLeftRadius: 12, borderTopRightRadius: 12, marginTop: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderBottomWidth: 0, borderColor: COLORS.border },
+    podiumMedal: { fontSize: 28 },
+    list: { paddingHorizontal: SPACING.xl },
+    rankRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: RADIUS.lg, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
+    rankRowYou: { backgroundColor: COLORS.accent + '10', borderColor: COLORS.accent + '40' },
+    rankNum: { fontSize: 14, fontWeight: FONT.extrabold, color: COLORS.t3, minWidth: 28 },
+    rankName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    rankDept: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    rankXp: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.accent },
+    streakRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
+    streakText: { fontSize: 10, color: COLORS.t3 },
+    onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.bg },
+    yourCard: { marginHorizontal: SPACING.xl, marginTop: 16 },
+    yourCardInner: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16 },
+    yourCardTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
+    yourCardSub: { fontSize: 11, color: COLORS.accent, fontWeight: FONT.medium, marginTop: 2 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -184,36 +219,3 @@ export default function LeaderboardScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, marginBottom: 18 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  errorText: { fontSize: 14, color: COLORS.t3, marginTop: 12, marginBottom: 12 },
-  retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
-  retryText: { fontSize: 13, color: COLORS.silver },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
-  emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4, textAlign: 'center', paddingHorizontal: 40 },
-  podium: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 8, paddingHorizontal: SPACING.xl, paddingTop: 10, marginBottom: 24 },
-  podiumItem: { flex: 1, alignItems: 'center' },
-  podiumName: { fontSize: 12, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 6 },
-  podiumXp: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
-  podiumBar: { width: '100%', backgroundColor: COLORS.card, borderTopLeftRadius: 12, borderTopRightRadius: 12, marginTop: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderBottomWidth: 0, borderColor: COLORS.border },
-  podiumMedal: { fontSize: 28 },
-  list: { paddingHorizontal: SPACING.xl },
-  rankRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: RADIUS.lg, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
-  rankRowYou: { backgroundColor: COLORS.accent + '10', borderColor: COLORS.accent + '40' },
-  rankNum: { fontSize: 14, fontWeight: FONT.extrabold, color: COLORS.t3, minWidth: 28 },
-  rankName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  rankDept: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  rankXp: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.accent },
-  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
-  streakText: { fontSize: 10, color: COLORS.t3 },
-  onlineDot: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.bg },
-  yourCard: { marginHorizontal: SPACING.xl, marginTop: 16 },
-  yourCardInner: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16 },
-  yourCardTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
-  yourCardSub: { fontSize: 11, color: COLORS.accent, fontWeight: FONT.medium, marginTop: 2 },
-});

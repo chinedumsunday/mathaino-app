@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   ActivityIndicator, Platform, Share,
@@ -9,9 +9,10 @@ import Svg, {
   Circle, Ellipse, Path, G, Defs, RadialGradient, Stop,
   Rect, Line, Polygon,
 } from 'react-native-svg';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { SPACING, RADIUS } from '../utils/theme';
 import { useAuth } from '../context/AuthContext';
 import { apiGetCertificate } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 // ── Floral SVG Decoration ─────────────────────────────────────────────────────
 
@@ -189,6 +190,7 @@ function SealSVG({ size = 64 }) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function CertificateScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const { certificate: certParam, courseId: courseIdParam } = route.params || {};
   const { user } = useAuth();
 
@@ -262,6 +264,83 @@ export default function CertificateScreen({ route, navigation }) {
       handleShare();
     }
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container:    { flex: 1, backgroundColor: '#F5F5F5' },
+    loadingWrap:  { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+    loadingText:  { fontSize: 14, color: '#888' },
+    center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+    errorTitle:   { fontSize: 18, fontWeight: '700', color: '#555', marginTop: 16 },
+    errorText:    { fontSize: 13, color: '#888', textAlign: 'center', marginTop: 8 },
+
+    header: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: SPACING.xl, paddingVertical: 14,
+      borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
+      backgroundColor: '#fff',
+    },
+    headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#222', textAlign: 'center' },
+
+    scroll: { alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16 },
+
+    certCard: {
+      borderRadius: 14,
+      overflow: 'hidden',
+      position: 'relative',
+      shadowColor: '#D4AF37',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+
+    certContent: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      paddingVertical: 24,
+    },
+
+    orgName: { fontSize: 11, fontWeight: '800', color: '#B8860B', letterSpacing: 4, textTransform: 'uppercase' },
+    orgSub:  { fontSize: 8,  color: '#999', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
+
+    sealWrap: { marginVertical: 8 },
+
+    certTitle:    { fontSize: 18, fontWeight: '900', color: '#B8860B', letterSpacing: 3, textTransform: 'uppercase' },
+    certSubtitle: { fontSize: 9,  color: '#B8860B', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 6 },
+
+    dividerGold: { width: 120, height: 1.5, backgroundColor: '#D4AF37', marginVertical: 12, opacity: 0.7 },
+
+    presentsLabel: { fontSize: 9, color: '#888', textAlign: 'center', marginBottom: 4, letterSpacing: 0.5 },
+    studentName:   { fontSize: 20, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 6, fontStyle: 'italic' },
+    courseName:    { fontSize: 12, fontWeight: '700', color: '#B8860B', textAlign: 'center', marginTop: 4 },
+    courseCode:    { fontSize: 9,  color: '#999', textAlign: 'center', marginTop: 2 },
+
+    certFooter: { flexDirection: 'row', gap: 24, marginTop: 4 },
+    footerCol:  { alignItems: 'center' },
+    footerVal:  { fontSize: 9, fontWeight: '700', color: '#333', textAlign: 'center', maxWidth: 90 },
+    footerLine: { width: 70, height: 0.8, backgroundColor: '#B8860B', marginVertical: 3, opacity: 0.6 },
+    footerLabel: { fontSize: 7, color: '#999', textTransform: 'uppercase', letterSpacing: 1 },
+
+    certId: { fontSize: 7, color: '#BBB', marginTop: 8, letterSpacing: 1 },
+
+    verifyRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
+    verifyText: { fontSize: 11, color: '#888' },
+
+    actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
+    actionBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      backgroundColor: COLORS.accent,
+      paddingVertical: 12, paddingHorizontal: 20,
+      borderRadius: RADIUS.lg,
+    },
+    actionBtnOutline: {
+      backgroundColor: 'transparent',
+      borderWidth: 1.5, borderColor: COLORS.accent,
+    },
+    actionBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  }), [COLORS]);
 
   if (loading) {
     return (
@@ -385,79 +464,3 @@ export default function CertificateScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#F5F5F5' },
-  loadingWrap:  { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText:  { fontSize: 14, color: '#888' },
-  center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  errorTitle:   { fontSize: 18, fontWeight: '700', color: '#555', marginTop: 16 },
-  errorText:    { fontSize: 13, color: '#888', textAlign: 'center', marginTop: 8 },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.xl, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
-    backgroundColor: '#fff',
-  },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#222', textAlign: 'center' },
-
-  scroll: { alignItems: 'center', paddingVertical: 28, paddingHorizontal: 16 },
-
-  certCard: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-
-  certContent: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 24,
-  },
-
-  orgName: { fontSize: 11, fontWeight: '800', color: '#B8860B', letterSpacing: 4, textTransform: 'uppercase' },
-  orgSub:  { fontSize: 8,  color: '#999', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
-
-  sealWrap: { marginVertical: 8 },
-
-  certTitle:    { fontSize: 18, fontWeight: '900', color: '#B8860B', letterSpacing: 3, textTransform: 'uppercase' },
-  certSubtitle: { fontSize: 9,  color: '#B8860B', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 6 },
-
-  dividerGold: { width: 120, height: 1.5, backgroundColor: '#D4AF37', marginVertical: 12, opacity: 0.7 },
-
-  presentsLabel: { fontSize: 9, color: '#888', textAlign: 'center', marginBottom: 4, letterSpacing: 0.5 },
-  studentName:   { fontSize: 20, fontWeight: '800', color: '#1A1A1A', textAlign: 'center', marginBottom: 6, fontStyle: 'italic' },
-  courseName:    { fontSize: 12, fontWeight: '700', color: '#B8860B', textAlign: 'center', marginTop: 4 },
-  courseCode:    { fontSize: 9,  color: '#999', textAlign: 'center', marginTop: 2 },
-
-  certFooter: { flexDirection: 'row', gap: 24, marginTop: 4 },
-  footerCol:  { alignItems: 'center' },
-  footerVal:  { fontSize: 9, fontWeight: '700', color: '#333', textAlign: 'center', maxWidth: 90 },
-  footerLine: { width: 70, height: 0.8, backgroundColor: '#B8860B', marginVertical: 3, opacity: 0.6 },
-  footerLabel: { fontSize: 7, color: '#999', textTransform: 'uppercase', letterSpacing: 1 },
-
-  certId: { fontSize: 7, color: '#BBB', marginTop: 8, letterSpacing: 1 },
-
-  verifyRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
-  verifyText: { fontSize: 11, color: '#888' },
-
-  actions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  actionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: COLORS.accent,
-    paddingVertical: 12, paddingHorizontal: 20,
-    borderRadius: RADIUS.lg,
-  },
-  actionBtnOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5, borderColor: COLORS.accent,
-  },
-  actionBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
-});

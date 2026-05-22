@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, FONT, SPACING } from '../utils/theme';
+import { FONT, SPACING } from '../utils/theme';
 import { Input, Button } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,6 +28,25 @@ export default function LoginScreen({ navigation }) {
       setLoading(false);
     }
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xxl },
+    logoWrap: { alignItems: 'center', marginBottom: 36 },
+    logo: { width: 64, height: 64, borderRadius: 18, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+    logoText: { fontSize: 30, fontWeight: FONT.extrabold, color: '#000' },
+    appName: { fontSize: 26, fontWeight: FONT.extrabold, color: COLORS.t1, letterSpacing: -0.5 },
+    tagline: { fontSize: 11, color: COLORS.t3, letterSpacing: 2, textTransform: 'uppercase', marginTop: 6 },
+    errorBox: { backgroundColor: '#FF4D4D18', borderWidth: 1, borderColor: '#FF4D4D40', borderRadius: 12, padding: 12, marginBottom: 16 },
+    errorText: { fontSize: 13, color: '#FF6B6B', textAlign: 'center', lineHeight: 18 },
+    loginBtn: { width: '100%', padding: 15, backgroundColor: COLORS.accent, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+    loginBtnText: { fontSize: 15, fontWeight: FONT.bold, color: '#000' },
+    forgotBtn: { alignItems: 'center', marginTop: 16 },
+    forgotText: { fontSize: 13, color: COLORS.silver },
+    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24, gap: 16 },
+    dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+    dividerText: { fontSize: 11, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -67,22 +88,3 @@ export default function LoginScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xxl },
-  logoWrap: { alignItems: 'center', marginBottom: 36 },
-  logo: { width: 64, height: 64, borderRadius: 18, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  logoText: { fontSize: 30, fontWeight: FONT.extrabold, color: '#000' },
-  appName: { fontSize: 26, fontWeight: FONT.extrabold, color: COLORS.t1, letterSpacing: -0.5 },
-  tagline: { fontSize: 11, color: COLORS.t3, letterSpacing: 2, textTransform: 'uppercase', marginTop: 6 },
-  errorBox: { backgroundColor: '#FF4D4D18', borderWidth: 1, borderColor: '#FF4D4D40', borderRadius: 12, padding: 12, marginBottom: 16 },
-  errorText: { fontSize: 13, color: '#FF6B6B', textAlign: 'center', lineHeight: 18 },
-  loginBtn: { width: '100%', padding: 15, backgroundColor: COLORS.accent, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  loginBtnText: { fontSize: 15, fontWeight: FONT.bold, color: '#000' },
-  forgotBtn: { alignItems: 'center', marginTop: 16 },
-  forgotText: { fontSize: 13, color: COLORS.silver },
-  divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24, gap: 16 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: { fontSize: 11, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1 },
-});

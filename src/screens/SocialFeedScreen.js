@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput,
   ActivityIndicator, RefreshControl, Modal, Linking, KeyboardAvoidingView,
@@ -7,20 +7,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Avatar, Badge } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import {
   apiGetFeed, apiCreatePost, apiDeletePost, apiToggleLike,
   apiGetComments, apiAddComment, apiDeleteComment, apiYoutubeSearch,
 } from '../services/api';
-
-const ROLE_COLOR = {
-  STUDENT: COLORS.blue,
-  LECTURER: COLORS.teal,
-  FACULTY: COLORS.orange,
-  SUPER_ADMIN: COLORS.pink,
-};
 
 function timeAgo(date) {
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
@@ -34,7 +28,7 @@ function isInstagramUrl(url) {
   return url && /instagram\.com\/(p|reel|tv)\//i.test(url);
 }
 
-function InstagramCard({ url }) {
+function InstagramCard({ url, styles, COLORS }) {
   return (
     <TouchableOpacity style={styles.igCard} onPress={() => Linking.openURL(url)}>
       <View style={styles.igIconWrap}>
@@ -50,7 +44,7 @@ function InstagramCard({ url }) {
   );
 }
 
-function YouTubeCard({ videoId }) {
+function YouTubeCard({ videoId, styles }) {
   return (
     <TouchableOpacity
       onPress={() => Linking.openURL(`https://youtube.com/watch?v=${videoId}`)}
@@ -68,7 +62,7 @@ function YouTubeCard({ videoId }) {
   );
 }
 
-function PostCard({ post, currentUser, onLike, onDelete, navigation }) {
+function PostCard({ post, currentUser, onLike, onDelete, navigation, styles, COLORS, ROLE_COLOR }) {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments]         = useState(post.comments || []);
   const [commentText, setCommentText]   = useState('');
@@ -152,10 +146,10 @@ function PostCard({ post, currentUser, onLike, onDelete, navigation }) {
       )}
 
       {/* YouTube */}
-      {!!post.youtubeId && <YouTubeCard videoId={post.youtubeId} />}
+      {!!post.youtubeId && <YouTubeCard videoId={post.youtubeId} styles={styles} />}
 
       {/* Instagram */}
-      {!!post.instagramUrl && <InstagramCard url={post.instagramUrl} />}
+      {!!post.instagramUrl && <InstagramCard url={post.instagramUrl} styles={styles} COLORS={COLORS} />}
 
       {/* Actions */}
       <View style={styles.postActions}>
@@ -209,8 +203,16 @@ function PostCard({ post, currentUser, onLike, onDelete, navigation }) {
 // ── Main Screen ────────────────────────────────────────────────────────────────
 
 export default function SocialFeedScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const canGoBack = navigation.canGoBack();
   const { user } = useAuth();
+
+  const ROLE_COLOR = useMemo(() => ({
+    STUDENT: COLORS.blue,
+    LECTURER: COLORS.teal,
+    FACULTY: COLORS.orange,
+    SUPER_ADMIN: COLORS.pink,
+  }), [COLORS]);
 
   const [posts, setPosts]           = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -318,6 +320,148 @@ export default function SocialFeedScreen({ navigation }) {
   };
 
   const hasContent = newPost.trim() || selectedVideo || selectedImage || igUrl.trim();
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+
+    header: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12,
+    },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    aiBtn: { padding: 4 },
+
+    composeCard: {
+      flexDirection: 'row', gap: 12,
+      marginHorizontal: SPACING.xl, marginBottom: 12,
+      backgroundColor: COLORS.card, borderRadius: RADIUS.lg,
+      borderWidth: 1, borderColor: COLORS.border, padding: 12,
+    },
+    composeInput: { color: COLORS.t1, fontSize: 13, minHeight: 40, maxHeight: 100 },
+
+    previewWrap: { marginTop: 8, position: 'relative', alignSelf: 'flex-start' },
+    imagePreview: { width: 120, height: 120, borderRadius: RADIUS.md },
+    removePreview: {
+      position: 'absolute', top: -8, right: -8,
+      backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
+    },
+
+    attachedVideo: {
+      flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6,
+      backgroundColor: '#FF000010', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8,
+    },
+    attachedTitle: { flex: 1, fontSize: 11, color: COLORS.t2 },
+
+    igInputRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8,
+      backgroundColor: '#E1306C10', borderRadius: RADIUS.md,
+      paddingHorizontal: 10, paddingVertical: 6,
+    },
+    igTextInput: { flex: 1, color: COLORS.t1, fontSize: 12 },
+
+    composeActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+    attachBtns: { flexDirection: 'row', gap: 12 },
+    attachBtn: { padding: 4 },
+    postBtn: { backgroundColor: COLORS.accent, paddingVertical: 6, paddingHorizontal: 18, borderRadius: 10 },
+    postBtnText: { fontSize: 13, fontWeight: FONT.bold, color: '#000' },
+    postErrorText: { fontSize: 11, color: COLORS.red, marginTop: 4 },
+
+    feedContent: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
+
+    postCard: {
+      backgroundColor: COLORS.card, borderRadius: RADIUS.lg,
+      borderWidth: 1, borderColor: COLORS.border,
+      padding: 14, marginBottom: 10,
+    },
+    postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    postAuthor: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
+    postMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+    postTime: { fontSize: 10, color: COLORS.t3 },
+    deleteBtn: { padding: 4 },
+    postBody: { fontSize: 13, color: COLORS.t1, lineHeight: 20, marginBottom: 10 },
+    postImage: { width: '100%', height: 200, borderRadius: RADIUS.md, marginBottom: 10 },
+
+    igCard: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      backgroundColor: '#E1306C10', borderRadius: RADIUS.md,
+      padding: 10, marginBottom: 10,
+    },
+    igIconWrap: {
+      width: 44, height: 44, borderRadius: 10,
+      backgroundColor: '#E1306C20', alignItems: 'center', justifyContent: 'center',
+    },
+    igLabel: { fontSize: 10, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 0.5 },
+    igUrl: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
+    igTap: { fontSize: 10, color: '#E1306C', marginTop: 4 },
+
+    ytCard: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      backgroundColor: '#FF000010', borderRadius: RADIUS.md,
+      padding: 10, marginBottom: 10,
+    },
+    ytThumb: {
+      width: 44, height: 44, borderRadius: 8,
+      backgroundColor: '#FF000020', alignItems: 'center', justifyContent: 'center',
+    },
+    ytLabel: { fontSize: 10, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 0.5 },
+    ytId: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
+    ytTap: { fontSize: 10, color: COLORS.accent, marginTop: 4 },
+
+    postActions: {
+      flexDirection: 'row', gap: 20, paddingTop: 8,
+      borderTopWidth: 1, borderTopColor: COLORS.border,
+    },
+    actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    actionCount: { fontSize: 12, color: COLORS.t3 },
+
+    commentsSection: {
+      marginTop: 10, paddingTop: 10,
+      borderTopWidth: 1, borderTopColor: COLORS.border, gap: 8,
+    },
+    commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+    commentBubble: { flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md, padding: 8 },
+    commentAuthor: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.t2, marginBottom: 2 },
+    commentBody: { fontSize: 12, color: COLORS.t1, lineHeight: 17 },
+    commentInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+    commentTextInput: {
+      flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md,
+      paddingHorizontal: 10, paddingVertical: 7, color: COLORS.t1, fontSize: 12,
+    },
+
+    empty: { alignItems: 'center', paddingVertical: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
+    emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4, textAlign: 'center' },
+
+    ytModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+    ytModalSheet: {
+      backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+      padding: SPACING.xl, maxHeight: '85%',
+    },
+    ytModalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+    ytModalTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 14 },
+    ytSearchRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+    ytSearchInput: {
+      flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md,
+      paddingHorizontal: 12, paddingVertical: 10, color: COLORS.t1, fontSize: 13,
+    },
+    ytSearchBtn: {
+      width: 42, height: 42, borderRadius: RADIUS.md,
+      backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center',
+    },
+    ytResultRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    },
+    ytResultThumb: {
+      width: 40, height: 40, borderRadius: 8,
+      backgroundColor: '#FF000015', alignItems: 'center', justifyContent: 'center',
+    },
+    ytResultTitle: { fontSize: 12, fontWeight: FONT.medium, color: COLORS.t1, lineHeight: 16 },
+    ytResultChannel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
+    ytModalCancel: { alignItems: 'center', paddingVertical: 16 },
+    ytModalCancelText: { fontSize: 14, color: COLORS.t3 },
+    ytNotConfigText: { fontSize: 11, color: COLORS.t3, marginBottom: 10, textAlign: 'center' },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -436,6 +580,9 @@ export default function SocialFeedScreen({ navigation }) {
               onLike={handleLike}
               onDelete={handleDelete}
               navigation={navigation}
+              styles={styles}
+              COLORS={COLORS}
+              ROLE_COLOR={ROLE_COLOR}
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />}
@@ -498,145 +645,3 @@ export default function SocialFeedScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12,
-  },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  aiBtn: { padding: 4 },
-
-  composeCard: {
-    flexDirection: 'row', gap: 12,
-    marginHorizontal: SPACING.xl, marginBottom: 12,
-    backgroundColor: COLORS.card, borderRadius: RADIUS.lg,
-    borderWidth: 1, borderColor: COLORS.border, padding: 12,
-  },
-  composeInput: { color: COLORS.t1, fontSize: 13, minHeight: 40, maxHeight: 100 },
-
-  previewWrap: { marginTop: 8, position: 'relative', alignSelf: 'flex-start' },
-  imagePreview: { width: 120, height: 120, borderRadius: RADIUS.md },
-  removePreview: {
-    position: 'absolute', top: -8, right: -8,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
-  },
-
-  attachedVideo: {
-    flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6,
-    backgroundColor: '#FF000010', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 8,
-  },
-  attachedTitle: { flex: 1, fontSize: 11, color: COLORS.t2 },
-
-  igInputRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8,
-    backgroundColor: '#E1306C10', borderRadius: RADIUS.md,
-    paddingHorizontal: 10, paddingVertical: 6,
-  },
-  igTextInput: { flex: 1, color: COLORS.t1, fontSize: 12 },
-
-  composeActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  attachBtns: { flexDirection: 'row', gap: 12 },
-  attachBtn: { padding: 4 },
-  postBtn: { backgroundColor: COLORS.accent, paddingVertical: 6, paddingHorizontal: 18, borderRadius: 10 },
-  postBtnText: { fontSize: 13, fontWeight: FONT.bold, color: '#000' },
-  postErrorText: { fontSize: 11, color: COLORS.red, marginTop: 4 },
-
-  feedContent: { paddingHorizontal: SPACING.xl, paddingBottom: 40 },
-
-  postCard: {
-    backgroundColor: COLORS.card, borderRadius: RADIUS.lg,
-    borderWidth: 1, borderColor: COLORS.border,
-    padding: 14, marginBottom: 10,
-  },
-  postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  postAuthor: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
-  postMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  postTime: { fontSize: 10, color: COLORS.t3 },
-  deleteBtn: { padding: 4 },
-  postBody: { fontSize: 13, color: COLORS.t1, lineHeight: 20, marginBottom: 10 },
-  postImage: { width: '100%', height: 200, borderRadius: RADIUS.md, marginBottom: 10 },
-
-  igCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#E1306C10', borderRadius: RADIUS.md,
-    padding: 10, marginBottom: 10,
-  },
-  igIconWrap: {
-    width: 44, height: 44, borderRadius: 10,
-    backgroundColor: '#E1306C20', alignItems: 'center', justifyContent: 'center',
-  },
-  igLabel: { fontSize: 10, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  igUrl: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
-  igTap: { fontSize: 10, color: '#E1306C', marginTop: 4 },
-
-  ytCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#FF000010', borderRadius: RADIUS.md,
-    padding: 10, marginBottom: 10,
-  },
-  ytThumb: {
-    width: 44, height: 44, borderRadius: 8,
-    backgroundColor: '#FF000020', alignItems: 'center', justifyContent: 'center',
-  },
-  ytLabel: { fontSize: 10, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  ytId: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
-  ytTap: { fontSize: 10, color: COLORS.accent, marginTop: 4 },
-
-  postActions: {
-    flexDirection: 'row', gap: 20, paddingTop: 8,
-    borderTopWidth: 1, borderTopColor: COLORS.border,
-  },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  actionCount: { fontSize: 12, color: COLORS.t3 },
-
-  commentsSection: {
-    marginTop: 10, paddingTop: 10,
-    borderTopWidth: 1, borderTopColor: COLORS.border, gap: 8,
-  },
-  commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  commentBubble: { flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md, padding: 8 },
-  commentAuthor: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.t2, marginBottom: 2 },
-  commentBody: { fontSize: 12, color: COLORS.t1, lineHeight: 17 },
-  commentInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  commentTextInput: {
-    flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md,
-    paddingHorizontal: 10, paddingVertical: 7, color: COLORS.t1, fontSize: 12,
-  },
-
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
-  emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4, textAlign: 'center' },
-
-  ytModalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-  ytModalSheet: {
-    backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: SPACING.xl, maxHeight: '85%',
-  },
-  ytModalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  ytModalTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 14 },
-  ytSearchRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  ytSearchInput: {
-    flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md,
-    paddingHorizontal: 12, paddingVertical: 10, color: COLORS.t1, fontSize: 13,
-  },
-  ytSearchBtn: {
-    width: 42, height: 42, borderRadius: RADIUS.md,
-    backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center',
-  },
-  ytResultRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border,
-  },
-  ytResultThumb: {
-    width: 40, height: 40, borderRadius: 8,
-    backgroundColor: '#FF000015', alignItems: 'center', justifyContent: 'center',
-  },
-  ytResultTitle: { fontSize: 12, fontWeight: FONT.medium, color: COLORS.t1, lineHeight: 16 },
-  ytResultChannel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
-  ytModalCancel: { alignItems: 'center', paddingVertical: 16 },
-  ytModalCancelText: { fontSize: 14, color: COLORS.t3 },
-  ytNotConfigText: { fontSize: 11, color: COLORS.t3, marginBottom: 10, textAlign: 'center' },
-});

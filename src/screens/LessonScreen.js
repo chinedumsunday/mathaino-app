@@ -1,31 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Button, Toast, useToast, VideoPlayer } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   apiGetContent, apiMarkComplete, apiGetCompletion,
   apiSubmitQuiz, apiGetQuizAttempts,
   apiSubmitAssignment, apiGetSubmission,
 } from '../services/api';
 
-const TYPE_CONFIG = {
-  VIDEO:      { icon: 'play-circle',      color: COLORS.teal,   label: 'Video Lesson' },
-  QUIZ:       { icon: 'checkmark-circle', color: COLORS.accent,  label: 'Quiz' },
-  DOCUMENT:   { icon: 'document-text',    color: COLORS.blue,    label: 'Reading Material' },
-  ASSIGNMENT: { icon: 'create',           color: COLORS.pink,    label: 'Assignment' },
-  video:      { icon: 'play-circle',      color: COLORS.teal,   label: 'Video Lesson' },
-  quiz:       { icon: 'checkmark-circle', color: COLORS.accent,  label: 'Quiz' },
-  doc:        { icon: 'document-text',    color: COLORS.blue,    label: 'Reading Material' },
-};
-
 // ─── Quiz Component ──────────────────────────────────────────────────────────
 function QuizPanel({ contentId, questions, onPassed }) {
+  const { colors: COLORS } = useTheme();
   const [selected, setSelected]     = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult]         = useState(null);
@@ -60,6 +52,35 @@ function QuizPanel({ contentId, questions, onPassed }) {
       setSubmitting(false);
     }
   };
+
+  const qStyles = useMemo(() => StyleSheet.create({
+    question: { marginBottom: 20 },
+    questionText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1, marginBottom: 10, lineHeight: 20 },
+    option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#0A0A0A', marginBottom: 8 },
+    optionSelected: { borderColor: COLORS.accent, backgroundColor: COLORS.accent + '15' },
+    optionDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: COLORS.t3, alignItems: 'center', justifyContent: 'center' },
+    optionDotSelected: { borderColor: COLORS.accent },
+    optionDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.accent },
+    optionText: { fontSize: 13, color: COLORS.t2, flex: 1 },
+    optionTextSelected: { color: COLORS.accent, fontWeight: FONT.semibold },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.sm, padding: 10, marginBottom: 8 },
+    errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
+    submitBtn: { backgroundColor: COLORS.accent, paddingVertical: 14, borderRadius: RADIUS.md, alignItems: 'center', marginTop: 8 },
+    submitBtnText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
+    resultCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 20, alignItems: 'center' },
+    resultIcon: { fontSize: 40, marginBottom: 10 },
+    resultTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 6 },
+    resultScore: { fontSize: 15, color: COLORS.accent, fontWeight: FONT.semibold, marginBottom: 8 },
+    resultHint: { fontSize: 12, color: COLORS.t3, textAlign: 'center', marginBottom: 12 },
+    retryBtn: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.accent },
+    retryBtnText: { fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
+    reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: RADIUS.sm, marginBottom: 6, width: '100%' },
+    reviewCorrect: { backgroundColor: COLORS.green + '20' },
+    reviewWrong: { backgroundColor: COLORS.red + '20' },
+    reviewText: { fontSize: 12, color: COLORS.t2, flex: 1 },
+    bestBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.accent + '15', borderRadius: RADIUS.md, padding: 10, marginBottom: 16 },
+    bestText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.medium },
+  }), [COLORS]);
 
   if (result) {
     return (
@@ -147,37 +168,9 @@ function QuizPanel({ contentId, questions, onPassed }) {
   );
 }
 
-const qStyles = StyleSheet.create({
-  question: { marginBottom: 20 },
-  questionText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1, marginBottom: 10, lineHeight: 20 },
-  option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#0A0A0A', marginBottom: 8 },
-  optionSelected: { borderColor: COLORS.accent, backgroundColor: COLORS.accent + '15' },
-  optionDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: COLORS.t3, alignItems: 'center', justifyContent: 'center' },
-  optionDotSelected: { borderColor: COLORS.accent },
-  optionDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.accent },
-  optionText: { fontSize: 13, color: COLORS.t2, flex: 1 },
-  optionTextSelected: { color: COLORS.accent, fontWeight: FONT.semibold },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.sm, padding: 10, marginBottom: 8 },
-  errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
-  submitBtn: { backgroundColor: COLORS.accent, paddingVertical: 14, borderRadius: RADIUS.md, alignItems: 'center', marginTop: 8 },
-  submitBtnText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-  resultCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 20, alignItems: 'center' },
-  resultIcon: { fontSize: 40, marginBottom: 10 },
-  resultTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 6 },
-  resultScore: { fontSize: 15, color: COLORS.accent, fontWeight: FONT.semibold, marginBottom: 8 },
-  resultHint: { fontSize: 12, color: COLORS.t3, textAlign: 'center', marginBottom: 12 },
-  retryBtn: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.accent },
-  retryBtnText: { fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
-  reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: RADIUS.sm, marginBottom: 6, width: '100%' },
-  reviewCorrect: { backgroundColor: COLORS.green + '20' },
-  reviewWrong: { backgroundColor: COLORS.red + '20' },
-  reviewText: { fontSize: 12, color: COLORS.t2, flex: 1 },
-  bestBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.accent + '15', borderRadius: RADIUS.md, padding: 10, marginBottom: 16 },
-  bestText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.medium },
-});
-
 // ─── Assignment Component ────────────────────────────────────────────────────
 function AssignmentPanel({ contentId, lessonBody, onSubmitted }) {
+  const { colors: COLORS } = useTheme();
   const [text, setText]           = useState('');
   const [fileUrl, setFileUrl]     = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -213,6 +206,28 @@ function AssignmentPanel({ contentId, lessonBody, onSubmitted }) {
       setSubmitting(false);
     }
   };
+
+  const aStyles = useMemo(() => StyleSheet.create({
+    label: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
+    input: { backgroundColor: '#0A0A0A', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
+    inputMulti: { height: 130, paddingTop: 12 },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.sm, padding: 10, marginTop: 8 },
+    errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
+    submitBtn: { backgroundColor: COLORS.pink, paddingVertical: 14, borderRadius: RADIUS.md, alignItems: 'center', marginTop: 16 },
+    submitBtnText: { fontSize: 14, fontWeight: FONT.bold, color: '#fff' },
+    card: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 18 },
+    statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    statusText: { fontSize: 14, fontWeight: FONT.semibold },
+    grade: { fontSize: 22, fontWeight: FONT.extrabold, color: COLORS.green, marginBottom: 10 },
+    feedback: { backgroundColor: '#0A0A0A', borderRadius: RADIUS.md, padding: 12, marginTop: 8 },
+    feedbackLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4 },
+    feedbackText: { fontSize: 13, color: COLORS.t2, lineHeight: 20 },
+    resubmitBtn: { marginTop: 16, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md },
+    resubmitText: { fontSize: 13, color: COLORS.t3 },
+    instructions: { backgroundColor: COLORS.blue + '15', borderRadius: RADIUS.md, padding: 14, marginBottom: 8 },
+    instructionsLabel: { fontSize: 10, color: COLORS.blue, fontWeight: FONT.bold, marginBottom: 4 },
+    instructionsText: { fontSize: 13, color: COLORS.t2, lineHeight: 20 },
+  }), [COLORS]);
 
   if (submitSuccess && existing) {
     return (
@@ -308,31 +323,51 @@ function AssignmentPanel({ contentId, lessonBody, onSubmitted }) {
   );
 }
 
-const aStyles = StyleSheet.create({
-  label: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
-  input: { backgroundColor: '#0A0A0A', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
-  inputMulti: { height: 130, paddingTop: 12 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.sm, padding: 10, marginTop: 8 },
-  errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
-  submitBtn: { backgroundColor: COLORS.pink, paddingVertical: 14, borderRadius: RADIUS.md, alignItems: 'center', marginTop: 16 },
-  submitBtnText: { fontSize: 14, fontWeight: FONT.bold, color: '#fff' },
-  card: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 18 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  statusText: { fontSize: 14, fontWeight: FONT.semibold },
-  grade: { fontSize: 22, fontWeight: FONT.extrabold, color: COLORS.green, marginBottom: 10 },
-  feedback: { backgroundColor: '#0A0A0A', borderRadius: RADIUS.md, padding: 12, marginTop: 8 },
-  feedbackLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4 },
-  feedbackText: { fontSize: 13, color: COLORS.t2, lineHeight: 20 },
-  resubmitBtn: { marginTop: 16, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md },
-  resubmitText: { fontSize: 13, color: COLORS.t3 },
-  instructions: { backgroundColor: COLORS.blue + '15', borderRadius: RADIUS.md, padding: 14, marginBottom: 8 },
-  instructionsLabel: { fontSize: 10, color: COLORS.blue, fontWeight: FONT.bold, marginBottom: 4 },
-  instructionsText: { fontSize: 13, color: COLORS.t2, lineHeight: 20 },
-});
-
 // ─── Main LessonScreen ───────────────────────────────────────────────────────
 export default function LessonScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const { lesson: passedLesson, lessonId, courseTitle = 'Course' } = route.params || {};
+
+  const TYPE_CONFIG = useMemo(() => ({
+    VIDEO:      { icon: 'play-circle',      color: COLORS.teal,   label: 'Video Lesson' },
+    QUIZ:       { icon: 'checkmark-circle', color: COLORS.accent,  label: 'Quiz' },
+    DOCUMENT:   { icon: 'document-text',    color: COLORS.blue,    label: 'Reading Material' },
+    ASSIGNMENT: { icon: 'create',           color: COLORS.pink,    label: 'Assignment' },
+    video:      { icon: 'play-circle',      color: COLORS.teal,   label: 'Video Lesson' },
+    quiz:       { icon: 'checkmark-circle', color: COLORS.accent,  label: 'Quiz' },
+    doc:        { icon: 'document-text',    color: COLORS.blue,    label: 'Reading Material' },
+  }), [COLORS]);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    errorText: { fontSize: 15, color: COLORS.t3, marginTop: 12 },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    headerTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1 },
+    headerSub: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.green, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10 },
+    completedText: { fontSize: 10, fontWeight: FONT.bold, color: '#000' },
+    scrollContent: { paddingBottom: 90 },
+    mediaArea: { height: 160, backgroundColor: '#0A0A0A', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 8 },
+    mediaLabel: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    lessonContent: { padding: SPACING.xl },
+    lessonTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
+    metaRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    metaPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#1A1A1A' },
+    metaText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium },
+    bodyText: { fontSize: 13, color: COLORS.t2, lineHeight: 22, marginBottom: 14 },
+    bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8, paddingLeft: 4 },
+    bullet: { width: 6, height: 6, borderRadius: 3 },
+    bulletText: { fontSize: 12, color: COLORS.t2 },
+    xpCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16, marginTop: 10 },
+    xpTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    xpSub: { fontSize: 11, color: COLORS.accent, fontWeight: FONT.medium, marginTop: 2 },
+    mediaLink: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.md, padding: 14, marginBottom: 18 },
+    mediaLinkText: { flex: 1, fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
+    bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, paddingHorizontal: SPACING.xl, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
+    emptyQuiz: { alignItems: 'center', paddingVertical: 40 },
+    emptyQuizText: { fontSize: 13, color: COLORS.t3, textAlign: 'center', marginTop: 12, lineHeight: 20 },
+  }), [COLORS]);
 
   const { addXp, syncXpStreak } = useAuth();
   const [lesson, setLesson]       = useState(passedLesson || null);
@@ -551,33 +586,3 @@ export default function LessonScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  errorText: { fontSize: 15, color: COLORS.t3, marginTop: 12 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1 },
-  headerSub: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-  completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.green, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10 },
-  completedText: { fontSize: 10, fontWeight: FONT.bold, color: '#000' },
-  scrollContent: { paddingBottom: 90 },
-  mediaArea: { height: 160, backgroundColor: '#0A0A0A', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 8 },
-  mediaLabel: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  lessonContent: { padding: SPACING.xl },
-  lessonTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
-  metaRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  metaPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#1A1A1A' },
-  metaText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium },
-  bodyText: { fontSize: 13, color: COLORS.t2, lineHeight: 22, marginBottom: 14 },
-  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8, paddingLeft: 4 },
-  bullet: { width: 6, height: 6, borderRadius: 3 },
-  bulletText: { fontSize: 12, color: COLORS.t2 },
-  xpCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16, marginTop: 10 },
-  xpTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  xpSub: { fontSize: 11, color: COLORS.accent, fontWeight: FONT.medium, marginTop: 2 },
-  mediaLink: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.md, padding: 14, marginBottom: 18 },
-  mediaLinkText: { flex: 1, fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, paddingHorizontal: SPACING.xl, backgroundColor: COLORS.bg, borderTopWidth: 1, borderTopColor: COLORS.border },
-  emptyQuiz: { alignItems: 'center', paddingVertical: 40 },
-  emptyQuizText: { fontSize: 13, color: COLORS.t3, textAlign: 'center', marginTop: 12, lineHeight: 20 },
-});

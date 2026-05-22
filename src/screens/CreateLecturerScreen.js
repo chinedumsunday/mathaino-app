@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Input, Button, Card, Toast, useToast } from '../components/UI';
 import { apiCreateLecturer } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CreateLecturerScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -54,6 +56,18 @@ export default function CreateLecturerScreen({ navigation }) {
       setSaving(false);
     }
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    scrollContent: { paddingHorizontal: SPACING.xl },
+    infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
+    infoText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 18 },
+    label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 12, marginBottom: 8 },
+    errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -141,14 +155,3 @@ export default function CreateLecturerScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  scrollContent: { paddingHorizontal: SPACING.xl },
-  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
-  infoText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 18 },
-  label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 12, marginBottom: 8 },
-  errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
-});

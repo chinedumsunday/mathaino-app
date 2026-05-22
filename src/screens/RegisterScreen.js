@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, FONT, SPACING } from '../utils/theme';
+import { FONT, SPACING } from '../utils/theme';
 import { Input, Button } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function RegisterScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -51,6 +53,17 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { padding: SPACING.xl, paddingBottom: SPACING.sm },
+    headerTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    headerSub: { fontSize: 12, color: COLORS.t3, marginTop: 4, lineHeight: 18 },
+    content: { padding: SPACING.xxl, paddingTop: 0 },
+    loadingBtn: { width: '100%', padding: 15, backgroundColor: COLORS.accent, borderRadius: 12, alignItems: 'center', opacity: 0.7 },
+    errorBanner: { backgroundColor: COLORS.red + '15', borderRadius: 10, padding: 12, marginBottom: 8 },
+    errorText: { fontSize: 12, color: COLORS.red, lineHeight: 18 },
+  }), [COLORS]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -93,14 +106,3 @@ export default function RegisterScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { padding: SPACING.xl, paddingBottom: SPACING.sm },
-  headerTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  headerSub: { fontSize: 12, color: COLORS.t3, marginTop: 4, lineHeight: 18 },
-  content: { padding: SPACING.xxl, paddingTop: 0 },
-  loadingBtn: { width: '100%', padding: 15, backgroundColor: COLORS.accent, borderRadius: 12, alignItems: 'center', opacity: 0.7 },
-  errorBanner: { backgroundColor: COLORS.red + '15', borderRadius: 10, padding: 12, marginBottom: 8 },
-  errorText: { fontSize: 12, color: COLORS.red, lineHeight: 18 },
-});

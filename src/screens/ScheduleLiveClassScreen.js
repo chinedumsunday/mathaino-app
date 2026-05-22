@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, FlatList, Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Input, Button, Card, Toast, useToast } from '../components/UI';
 import { apiMyCourses, apiCreateLiveSession, apiListLiveSessions, apiCancelLiveSession } from '../services/api';
-
-const PLATFORMS = [
-  { id: 'zoom', label: 'Zoom', icon: 'videocam', color: '#2D8CFF', hint: 'https://zoom.us/j/...' },
-  { id: 'google_meet', label: 'Google Meet', icon: 'logo-google', color: '#00897B', hint: 'https://meet.google.com/...' },
-  { id: 'teams', label: 'Microsoft Teams', icon: 'people', color: '#6264A7', hint: 'https://teams.microsoft.com/...' },
-  { id: 'other', label: 'Other / Custom', icon: 'link', color: COLORS.t3, hint: 'https://...' },
-];
+import { useTheme } from '../context/ThemeContext';
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -39,6 +33,15 @@ function isPast(isoStr) {
 }
 
 export default function ScheduleLiveClassScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
+
+  const PLATFORMS = useMemo(() => [
+    { id: 'zoom', label: 'Zoom', icon: 'videocam', color: '#2D8CFF', hint: 'https://zoom.us/j/...' },
+    { id: 'google_meet', label: 'Google Meet', icon: 'logo-google', color: '#00897B', hint: 'https://meet.google.com/...' },
+    { id: 'teams', label: 'Microsoft Teams', icon: 'people', color: '#6264A7', hint: 'https://teams.microsoft.com/...' },
+    { id: 'other', label: 'Other / Custom', icon: 'link', color: COLORS.t3, hint: 'https://...' },
+  ], [COLORS]);
+
   const [courses, setCourses] = useState([]);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
@@ -151,6 +154,52 @@ export default function ScheduleLiveClassScreen({ navigation }) {
       Linking.openURL(url).catch(() => showToast('Could not open link', 'error'));
     }
   };
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    headerTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    tabRow: { flexDirection: 'row', marginHorizontal: SPACING.xl, marginBottom: 12, backgroundColor: COLORS.card, borderRadius: RADIUS.md, padding: 4 },
+    tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: RADIUS.sm },
+    tabActive: { backgroundColor: COLORS.accent },
+    tabText: { fontSize: 13, fontWeight: FONT.medium, color: COLORS.t3 },
+    tabTextActive: { color: '#000', fontWeight: FONT.bold },
+    scrollContent: { paddingHorizontal: SPACING.xxl, paddingBottom: 20 },
+    infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
+    infoText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 18 },
+    label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
+    selector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 16 },
+    selectorValue: { fontSize: 13, color: COLORS.t1 },
+    selectorPlaceholder: { fontSize: 13, color: '#444' },
+    platformRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    platformIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    dateTimeRow: { flexDirection: 'row', gap: 12 },
+    dateHint: { fontSize: 10, color: COLORS.t3, marginTop: -10, marginBottom: 14, marginLeft: 2 },
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 10, marginBottom: 8 },
+    errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
+    // Upcoming
+    empty: { alignItems: 'center', paddingVertical: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
+    emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
+    sessionCard: { marginBottom: 12 },
+    sessionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+    sessionTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1 },
+    sessionCourse: { fontSize: 11, color: COLORS.t3, marginTop: 2 },
+    sessionMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+    sessionMetaText: { fontSize: 12, color: COLORS.t2 },
+    sessionActions: { flexDirection: 'row', gap: 10 },
+    sessionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: RADIUS.sm, borderWidth: 1 },
+    sessionBtnText: { fontSize: 12, fontWeight: FONT.semibold },
+    // Bottom sheet
+    sheetOverlay: { flex: 1, backgroundColor: '#000000BB', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 20, maxHeight: '70%' },
+    sheetTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 16 },
+    sheetEmpty: { fontSize: 13, color: COLORS.t3, textAlign: 'center', paddingVertical: 20 },
+    sheetItem: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    sheetItemActive: { opacity: 1 },
+    sheetItemText: { fontSize: 14, color: COLORS.t1, fontWeight: FONT.medium },
+    sheetItemSub: { fontSize: 11, color: COLORS.t3, marginTop: 2 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -389,48 +438,3 @@ export default function ScheduleLiveClassScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  headerTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  tabRow: { flexDirection: 'row', marginHorizontal: SPACING.xl, marginBottom: 12, backgroundColor: COLORS.card, borderRadius: RADIUS.md, padding: 4 },
-  tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: RADIUS.sm },
-  tabActive: { backgroundColor: COLORS.accent },
-  tabText: { fontSize: 13, fontWeight: FONT.medium, color: COLORS.t3 },
-  tabTextActive: { color: '#000', fontWeight: FONT.bold },
-  scrollContent: { paddingHorizontal: SPACING.xxl, paddingBottom: 20 },
-  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
-  infoText: { flex: 1, fontSize: 11, color: COLORS.t2, lineHeight: 18 },
-  label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
-  selector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 16 },
-  selectorValue: { fontSize: 13, color: COLORS.t1 },
-  selectorPlaceholder: { fontSize: 13, color: '#444' },
-  platformRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  platformIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  dateTimeRow: { flexDirection: 'row', gap: 12 },
-  dateHint: { fontSize: 10, color: COLORS.t3, marginTop: -10, marginBottom: 14, marginLeft: 2 },
-  errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 10, marginBottom: 8 },
-  errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
-  // Upcoming
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
-  emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
-  sessionCard: { marginBottom: 12 },
-  sessionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  sessionTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1 },
-  sessionCourse: { fontSize: 11, color: COLORS.t3, marginTop: 2 },
-  sessionMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  sessionMetaText: { fontSize: 12, color: COLORS.t2 },
-  sessionActions: { flexDirection: 'row', gap: 10 },
-  sessionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderRadius: RADIUS.sm, borderWidth: 1 },
-  sessionBtnText: { fontSize: 12, fontWeight: FONT.semibold },
-  // Bottom sheet
-  sheetOverlay: { flex: 1, backgroundColor: '#000000BB', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 20, maxHeight: '70%' },
-  sheetTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 16 },
-  sheetEmpty: { fontSize: 13, color: COLORS.t3, textAlign: 'center', paddingVertical: 20 },
-  sheetItem: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  sheetItemActive: { opacity: 1 },
-  sheetItemText: { fontSize: 14, color: COLORS.t1, fontWeight: FONT.medium },
-  sheetItemSub: { fontSize: 11, color: COLORS.t3, marginTop: 2 },
-});

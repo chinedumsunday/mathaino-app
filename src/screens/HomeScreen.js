@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, FlatList, ActivityIndicator, RefreshControl, Linking, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
 import { Avatar, ProgressBar, Card, SectionHeader, Badge } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   apiMyEnrollments,
   apiMyCourses,
@@ -20,6 +21,8 @@ import {
 
 // ─── Shared header used by all role views ────────────────────────────────────
 function HomeHeader({ user, navigation, roleColor, roleLabel }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useHomeStyles();
   const firstName = user?.firstName || 'Learner';
   const lastName = user?.lastName || '';
   const hour = new Date().getHours();
@@ -50,6 +53,8 @@ function HomeHeader({ user, navigation, roleColor, roleLabel }) {
 }
 
 function ErrorRetry({ message, onRetry }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useHomeStyles();
   return (
     <View style={styles.errorWrap}>
       <Text style={styles.errorText}>{message}</Text>
@@ -62,6 +67,8 @@ function ErrorRetry({ message, onRetry }) {
 
 // ─── STUDENT HOME ─────────────────────────────────────────────────────────────
 function StudentHome({ navigation, user }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useHomeStyles();
   const [enrollments, setEnrollments] = useState([]);
   const [liveSessions, setLiveSessions] = useState([]);
   const [userRank, setUserRank] = useState(null);
@@ -259,6 +266,8 @@ function StudentHome({ navigation, user }) {
 
 // ─── LECTURER HOME ─────────────────────────────────────────────────────────────
 function LecturerHome({ navigation, user }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useHomeStyles();
   const [courses, setCourses] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
@@ -422,6 +431,8 @@ function LecturerHome({ navigation, user }) {
 
 // ─── FACULTY HOME ──────────────────────────────────────────────────────────────
 function FacultyHome({ navigation, user }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useHomeStyles();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -504,6 +515,8 @@ function FacultyHome({ navigation, user }) {
 
 // ─── SUPER ADMIN HOME ──────────────────────────────────────────────────────────
 function AdminHome({ navigation, user }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useHomeStyles();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -627,77 +640,80 @@ export default function HomeScreen({ navigation }) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: 4 },
-  greeting: { fontSize: 12, color: COLORS.t3 },
-  name: { fontSize: 22, fontWeight: FONT.extrabold, color: COLORS.t1 },
-  rolePill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, marginTop: 4 },
-  roleText: { fontSize: 10, fontWeight: FONT.bold },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
-  bellWrap: { position: 'relative', padding: 2 },
-  bellDot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.red, borderWidth: 2, borderColor: COLORS.bg },
-  statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, marginBottom: 16 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#1A1A1A' },
-  statText: { fontSize: 11, fontWeight: FONT.bold },
-  searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 18, position: 'relative' },
-  searchIcon: { position: 'absolute', left: 14, top: 14, zIndex: 1 },
-  searchInput: { width: '100%', paddingVertical: 13, paddingLeft: 42, paddingRight: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, color: COLORS.t1, fontSize: 13 },
-  section: { paddingHorizontal: SPACING.xl, marginBottom: 22 },
-  sectionTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
-  courseCard: { width: 190, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: SPACING.lg, marginRight: 12, borderWidth: 1, borderColor: COLORS.border },
-  courseEmoji: { fontSize: 32, marginBottom: 8 },
-  courseTitle: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1, marginBottom: 3 },
-  courseLecturer: { fontSize: 11, color: COLORS.t3, marginBottom: 10 },
-  coursePercent: { fontSize: 11, fontWeight: FONT.bold, marginTop: 6 },
-  enrollCTA: { width: 190, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: SPACING.xl, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed' },
-  enrollCTAText: { fontSize: 12, color: COLORS.t3, textAlign: 'center', marginTop: 8 },
-  quickGrid: { flexDirection: 'row', gap: 10 },
-  quickAction: { flex: 1, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, paddingVertical: 14, alignItems: 'center', gap: 6 },
-  quickLabel: { fontSize: 9, color: COLORS.t3, fontWeight: FONT.semibold },
-  upcomingEmpty: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center', paddingVertical: 18 },
-  upcomingEmptyText: { fontSize: 12, color: COLORS.t3 },
-  offlineNote: { fontSize: 10, color: COLORS.t3, marginTop: 4, textAlign: 'center' },
-  errorWrap: { alignItems: 'center', paddingVertical: 20 },
-  errorText: { fontSize: 13, color: COLORS.t3, marginBottom: 8 },
-  retryBtn: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
-  retryText: { fontSize: 12, color: COLORS.silver },
-  // Lecturer
-  pendingBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: SPACING.xl, marginBottom: 16, backgroundColor: COLORS.orange + '15', borderWidth: 1, borderColor: COLORS.orange + '30', borderRadius: RADIUS.lg, padding: 12 },
-  pendingBannerText: { flex: 1, fontSize: 13, fontWeight: FONT.semibold, color: COLORS.orange },
-  createCourseCTA: { backgroundColor: COLORS.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed', padding: 24, alignItems: 'center' },
-  ctaTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 10 },
-  ctaDesc: { fontSize: 11, color: COLORS.t3, textAlign: 'center', marginTop: 4 },
-  lecturerCourseCard: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  lcTitle: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
-  lcCode: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-  lcMeta: { alignItems: 'flex-end', gap: 4 },
-  lcStat: { fontSize: 10, color: COLORS.t3 },
-  publishBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  publishText: { fontSize: 9, fontWeight: FONT.bold },
-  // Faculty / Admin
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  statCard: { flex: 1, minWidth: '44%', backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 14, alignItems: 'center', gap: 4 },
-  statCardNum: { fontSize: 24, fontWeight: FONT.extrabold },
-  statCardLabel: { fontSize: 9, color: COLORS.t3, fontWeight: FONT.semibold },
-  managementRow: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 8 },
-  managementIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  managementLabel: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  managementDesc: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  recentUserRow: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingHorizontal: 14 },
-  recentUserName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  recentUserEmail: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  // Completed course card
-  courseCardCompleted: { borderColor: COLORS.teal + '40', backgroundColor: COLORS.card },
-  completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
-  completedText: { fontSize: 11, color: COLORS.teal, fontWeight: FONT.semibold },
-  // Live session cards
-  liveCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  liveCardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.red, marginTop: 2 },
-  liveTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  liveCourse: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-  liveTime: { fontSize: 10, color: COLORS.accent, marginTop: 2 },
-  joinBtn: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: RADIUS.sm, backgroundColor: COLORS.red + '15', borderWidth: 1, borderColor: COLORS.red },
-  joinBtnText: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.red },
-});
+function useHomeStyles() {
+  const { colors: COLORS } = useTheme();
+  return useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: SPACING.xl, paddingTop: SPACING.lg, paddingBottom: 4 },
+    greeting: { fontSize: 12, color: COLORS.t3 },
+    name: { fontSize: 22, fontWeight: FONT.extrabold, color: COLORS.t1 },
+    rolePill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, marginTop: 4 },
+    roleText: { fontSize: 10, fontWeight: FONT.bold },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
+    bellWrap: { position: 'relative', padding: 2 },
+    bellDot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.red, borderWidth: 2, borderColor: COLORS.bg },
+    statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, marginBottom: 16 },
+    statPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#1A1A1A' },
+    statText: { fontSize: 11, fontWeight: FONT.bold },
+    searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 18, position: 'relative' },
+    searchIcon: { position: 'absolute', left: 14, top: 14, zIndex: 1 },
+    searchInput: { width: '100%', paddingVertical: 13, paddingLeft: 42, paddingRight: 16, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, color: COLORS.t1, fontSize: 13 },
+    section: { paddingHorizontal: SPACING.xl, marginBottom: 22 },
+    sectionTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
+    courseCard: { width: 190, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: SPACING.lg, marginRight: 12, borderWidth: 1, borderColor: COLORS.border },
+    courseEmoji: { fontSize: 32, marginBottom: 8 },
+    courseTitle: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1, marginBottom: 3 },
+    courseLecturer: { fontSize: 11, color: COLORS.t3, marginBottom: 10 },
+    coursePercent: { fontSize: 11, fontWeight: FONT.bold, marginTop: 6 },
+    enrollCTA: { width: 190, backgroundColor: COLORS.card, borderRadius: RADIUS.xl, padding: SPACING.xl, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed' },
+    enrollCTAText: { fontSize: 12, color: COLORS.t3, textAlign: 'center', marginTop: 8 },
+    quickGrid: { flexDirection: 'row', gap: 10 },
+    quickAction: { flex: 1, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, paddingVertical: 14, alignItems: 'center', gap: 6 },
+    quickLabel: { fontSize: 9, color: COLORS.t3, fontWeight: FONT.semibold },
+    upcomingEmpty: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center', paddingVertical: 18 },
+    upcomingEmptyText: { fontSize: 12, color: COLORS.t3 },
+    offlineNote: { fontSize: 10, color: COLORS.t3, marginTop: 4, textAlign: 'center' },
+    errorWrap: { alignItems: 'center', paddingVertical: 20 },
+    errorText: { fontSize: 13, color: COLORS.t3, marginBottom: 8 },
+    retryBtn: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
+    retryText: { fontSize: 12, color: COLORS.silver },
+    // Lecturer
+    pendingBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: SPACING.xl, marginBottom: 16, backgroundColor: COLORS.orange + '15', borderWidth: 1, borderColor: COLORS.orange + '30', borderRadius: RADIUS.lg, padding: 12 },
+    pendingBannerText: { flex: 1, fontSize: 13, fontWeight: FONT.semibold, color: COLORS.orange },
+    createCourseCTA: { backgroundColor: COLORS.card, borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed', padding: 24, alignItems: 'center' },
+    ctaTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 10 },
+    ctaDesc: { fontSize: 11, color: COLORS.t3, textAlign: 'center', marginTop: 4 },
+    lecturerCourseCard: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    lcTitle: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
+    lcCode: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    lcMeta: { alignItems: 'flex-end', gap: 4 },
+    lcStat: { fontSize: 10, color: COLORS.t3 },
+    publishBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+    publishText: { fontSize: 9, fontWeight: FONT.bold },
+    // Faculty / Admin
+    statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    statCard: { flex: 1, minWidth: '44%', backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 14, alignItems: 'center', gap: 4 },
+    statCardNum: { fontSize: 24, fontWeight: FONT.extrabold },
+    statCardLabel: { fontSize: 9, color: COLORS.t3, fontWeight: FONT.semibold },
+    managementRow: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 8 },
+    managementIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    managementLabel: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    managementDesc: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    recentUserRow: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingHorizontal: 14 },
+    recentUserName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    recentUserEmail: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    // Completed course card
+    courseCardCompleted: { borderColor: COLORS.teal + '40', backgroundColor: COLORS.card },
+    completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
+    completedText: { fontSize: 11, color: COLORS.teal, fontWeight: FONT.semibold },
+    // Live session cards
+    liveCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+    liveCardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.red, marginTop: 2 },
+    liveTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    liveCourse: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    liveTime: { fontSize: 10, color: COLORS.accent, marginTop: 2 },
+    joinBtn: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: RADIUS.sm, backgroundColor: COLORS.red + '15', borderWidth: 1, borderColor: COLORS.red },
+    joinBtnText: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.red },
+  }), [COLORS]);
+}

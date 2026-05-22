@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { apiMyCertificates } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function MyCertificatesScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [certs, setCerts]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -19,6 +21,22 @@ export default function MyCertificatesScreen({ navigation }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    title: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    card: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.accent + '30', borderRadius: RADIUS.lg, padding: 16 },
+    cardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
+    badge: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.accent + '20', alignItems: 'center', justifyContent: 'center' },
+    courseTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 2 },
+    courseMeta: { fontSize: 11, color: COLORS.t3 },
+    issuedDate: { fontSize: 11, color: COLORS.accent, marginTop: 4, fontWeight: FONT.medium },
+    empty: { alignItems: 'center', paddingTop: 80 },
+    emptyEmoji: { fontSize: 48, marginBottom: 16 },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 8 },
+    emptySub: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -71,18 +89,3 @@ export default function MyCertificatesScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  title: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.accent + '30', borderRadius: RADIUS.lg, padding: 16 },
-  cardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  badge: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.accent + '20', alignItems: 'center', justifyContent: 'center' },
-  courseTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 2 },
-  courseMeta: { fontSize: 11, color: COLORS.t3 },
-  issuedDate: { fontSize: 11, color: COLORS.accent, marginTop: 4, fontWeight: FONT.medium },
-  empty: { alignItems: 'center', paddingTop: 80 },
-  emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 8 },
-  emptySub: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20 },
-});

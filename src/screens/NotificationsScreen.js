@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { apiListNotifications, apiMarkNotificationRead, apiMarkAllNotificationsRead } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 // Map backend notification titles/types to accent colors
-const accentForNotif = (n) => {
+const accentForNotif = (n, COLORS) => {
   const t = (n.title || '').toLowerCase();
   if (t.includes('approved') || t.includes('complete') || t.includes('enrolled')) return COLORS.green;
   if (t.includes('rejected') || t.includes('error')) return COLORS.pink;
@@ -30,17 +31,18 @@ const relativeTime = (iso) => {
 };
 
 // Normalize a backend notification to the shape this screen expects
-const normalize = (n) => ({
+const normalize = (n, COLORS) => ({
   id: n.id,
   title: n.title,
   desc: n.message || n.desc || '',
   time: relativeTime(n.createdAt),
   unread: !n.isRead,
-  accent: accentForNotif(n),
+  accent: accentForNotif(n, COLORS),
 });
 
 
 export default function NotificationsScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,7 +55,7 @@ export default function NotificationsScreen({ navigation }) {
 
     try {
       const res = await apiListNotifications({ limit: 50 });
-      const items = (res.data?.notifications || []).map(normalize);
+      const items = (res.data?.notifications || []).map(n => normalize(n, COLORS));
       setNotifs(items);
     } catch (e) {
       setError('Could not load notifications.');
@@ -78,6 +80,38 @@ export default function NotificationsScreen({ navigation }) {
   const unreadCount = notifs.filter(n => n.unread).length;
   const newNotifs = notifs.filter(n => n.unread);
   const oldNotifs = notifs.filter(n => !n.unread);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    markAllText: { fontSize: 12, color: COLORS.silver },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+    scrollContent: { paddingHorizontal: SPACING.xl },
+    sectionLabel: { fontSize: 10, fontWeight: FONT.bold, color: COLORS.t3, letterSpacing: 1.5, marginBottom: 10 },
+    notifCard: {
+      backgroundColor: COLORS.card,
+      borderRadius: RADIUS.lg,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      marginBottom: 8,
+      overflow: 'hidden',
+      flexDirection: 'row',
+    },
+    notifUnread: { backgroundColor: '#0A0A0A' },
+    accentBar: { width: 3 },
+    notifContent: { flex: 1, flexDirection: 'row', padding: 14, gap: 12 },
+    notifTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 3 },
+    notifDesc: { fontSize: 11, color: COLORS.t2, lineHeight: 16 },
+    notifRight: { alignItems: 'flex-end', gap: 6 },
+    notifTime: { fontSize: 10, color: COLORS.t3 },
+    unreadDot: { width: 6, height: 6, borderRadius: 3 },
+    empty: { alignItems: 'center', paddingVertical: 60 },
+    emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
+    emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
+    retryBtn: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+    retryText: { fontSize: 13, color: COLORS.silver },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -175,35 +209,3 @@ export default function NotificationsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  markAllText: { fontSize: 12, color: COLORS.silver },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingHorizontal: SPACING.xl },
-  sectionLabel: { fontSize: 10, fontWeight: FONT.bold, color: COLORS.t3, letterSpacing: 1.5, marginBottom: 10 },
-  notifCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 8,
-    overflow: 'hidden',
-    flexDirection: 'row',
-  },
-  notifUnread: { backgroundColor: '#0A0A0A' },
-  accentBar: { width: 3 },
-  notifContent: { flex: 1, flexDirection: 'row', padding: 14, gap: 12 },
-  notifTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 3 },
-  notifDesc: { fontSize: 11, color: COLORS.t2, lineHeight: 16 },
-  notifRight: { alignItems: 'flex-end', gap: 6 },
-  notifTime: { fontSize: 10, color: COLORS.t3 },
-  unreadDot: { width: 6, height: 6, borderRadius: 3 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 16 },
-  emptyText: { fontSize: 13, color: COLORS.t3, marginTop: 4 },
-  retryBtn: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
-  retryText: { fontSize: 13, color: COLORS.silver },
-});

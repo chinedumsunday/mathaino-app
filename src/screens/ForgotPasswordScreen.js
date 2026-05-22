@@ -1,15 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView,
   Platform, TextInput, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Input, Button, Toast, useToast } from '../components/UI';
 import { apiForgotPassword, apiVerifyOTP, apiResetPassword } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ForgotPasswordScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -141,6 +143,31 @@ export default function ForgotPasswordScreen({ navigation }) {
   };
 
   const stepProgress = Math.min(step, 3) / 3;
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    progressTrack: { height: 3, backgroundColor: '#1a1a1a', marginHorizontal: SPACING.xl, borderRadius: 2, marginBottom: 8 },
+    progressFill: { height: '100%', backgroundColor: COLORS.accent, borderRadius: 2 },
+    content: { flex: 1, paddingHorizontal: SPACING.xxl, justifyContent: 'center', gap: 0 },
+    iconWrap: { width: 72, height: 72, borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 24 },
+    stepTitle: { fontSize: 20, fontWeight: FONT.bold, color: COLORS.t1, textAlign: 'center', marginBottom: 8 },
+    stepDesc: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20, marginBottom: 28 },
+    errorMsg: { fontSize: 12, color: COLORS.red, marginBottom: 12, marginTop: -4 },
+    otpRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 28 },
+    otpBox: { width: 46, height: 56, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.card, textAlign: 'center', fontSize: 22, fontWeight: FONT.bold, color: COLORS.t1 },
+    otpBoxFilled: { borderColor: COLORS.accent, backgroundColor: COLORS.accent + '10' },
+    backLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20 },
+    backLinkText: { fontSize: 13, color: COLORS.silver },
+    resendBtn: { alignItems: 'center', marginTop: 16 },
+    resendText: { fontSize: 13, color: COLORS.accent },
+    resendDisabled: { color: COLORS.t3 },
+    successContent: { flex: 1, paddingHorizontal: SPACING.xxl, alignItems: 'center', justifyContent: 'center' },
+    successIcon: { marginBottom: 24 },
+    successTitle: { fontSize: 26, fontWeight: FONT.extrabold, color: COLORS.t1, marginBottom: 12, textAlign: 'center' },
+    successDesc: { fontSize: 14, color: COLORS.t3, textAlign: 'center', lineHeight: 22 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -280,27 +307,3 @@ export default function ForgotPasswordScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  progressTrack: { height: 3, backgroundColor: '#1a1a1a', marginHorizontal: SPACING.xl, borderRadius: 2, marginBottom: 8 },
-  progressFill: { height: '100%', backgroundColor: COLORS.accent, borderRadius: 2 },
-  content: { flex: 1, paddingHorizontal: SPACING.xxl, justifyContent: 'center', gap: 0 },
-  iconWrap: { width: 72, height: 72, borderRadius: 20, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 24 },
-  stepTitle: { fontSize: 20, fontWeight: FONT.bold, color: COLORS.t1, textAlign: 'center', marginBottom: 8 },
-  stepDesc: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20, marginBottom: 28 },
-  errorMsg: { fontSize: 12, color: COLORS.red, marginBottom: 12, marginTop: -4 },
-  otpRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 28 },
-  otpBox: { width: 46, height: 56, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.card, textAlign: 'center', fontSize: 22, fontWeight: FONT.bold, color: COLORS.t1 },
-  otpBoxFilled: { borderColor: COLORS.accent, backgroundColor: COLORS.accent + '10' },
-  backLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 20 },
-  backLinkText: { fontSize: 13, color: COLORS.silver },
-  resendBtn: { alignItems: 'center', marginTop: 16 },
-  resendText: { fontSize: 13, color: COLORS.accent },
-  resendDisabled: { color: COLORS.t3 },
-  successContent: { flex: 1, paddingHorizontal: SPACING.xxl, alignItems: 'center', justifyContent: 'center' },
-  successIcon: { marginBottom: 24 },
-  successTitle: { fontSize: 26, fontWeight: FONT.extrabold, color: COLORS.t1, marginBottom: 12, textAlign: 'center' },
-  successDesc: { fontSize: 14, color: COLORS.t3, textAlign: 'center', lineHeight: 22 },
-});

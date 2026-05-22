@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavigationContainer, DefaultTheme, useFocusEffect } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -8,7 +8,8 @@ import {
   TextInput, FlatList, Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Card, ProgressBar, Chip, Avatar, Badge, StatusDot } from '../components/UI';
 import {
@@ -47,10 +48,17 @@ import ScheduleLiveClassScreen from '../screens/ScheduleLiveClassScreen';
 // ═══ COURSES TAB (role-aware) ═══
 function CoursesScreen({ navigation }) {
   const { isStudent, canCreateCourses } = useAuth();
+  const { colors: COLORS } = useTheme();
   const [filter, setFilter] = React.useState('All');
-  const [items, setItems] = React.useState([]);   // enrollments (student) or courses (creator)
+  const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+
+  const s = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+    topTitle: { fontSize: 18, fontWeight: '700', color: COLORS.t1 },
+  }), [COLORS]);
 
   const load = React.useCallback(async () => {
     try {
@@ -59,7 +67,6 @@ function CoursesScreen({ navigation }) {
         setItems(res.data.enrollments || []);
       } else {
         const res = await apiMyCourses();
-        // Normalise into the same shape so one renderItem handles both
         setItems((res.data.courses || []).map(c => ({ id: c.id, progress: 0, isCourse: true, course: c })));
       }
     } catch {
@@ -84,12 +91,10 @@ function CoursesScreen({ navigation }) {
     : filter === 'In Progress' ? items.filter(e => (e.progress || 0) > 0 && (e.progress || 0) < 100)
     : items.filter(e => (e.progress || 0) >= 90);
 
-  const tabTitle = isStudent ? 'My Courses' : 'My Courses';
-
   return (
     <SafeAreaView style={s.container} edges={['top']}>
       <View style={s.topBar}>
-        <Text style={s.topTitle}>{tabTitle}</Text>
+        <Text style={s.topTitle}>{isStudent ? 'My Courses' : 'My Courses'}</Text>
         {isStudent
           ? <TouchableOpacity onPress={() => navigation.navigate('Browse')}>
               <Text style={{ color: COLORS.silver, fontSize: 12 }}>Browse →</Text>
@@ -156,7 +161,7 @@ function CoursesScreen({ navigation }) {
                     <>
                       <Text style={{ fontSize: 11, color: COLORS.t3 }}>{c?.code} • {c?._count?.enrollments || 0} students • {c?._count?.modules || 0} modules</Text>
                       <View style={{ flexDirection: 'row', marginTop: 6 }}>
-                        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: c?.isPublished ? COLORS.teal + '20' : '#1A1A1A' }}>
+                        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: c?.isPublished ? COLORS.teal + '20' : COLORS.elevated }}>
                           <Text style={{ fontSize: 9, fontWeight: '700', color: c?.isPublished ? COLORS.teal : COLORS.t3 }}>
                             {c?.isPublished ? 'Published' : 'Draft'}
                           </Text>
@@ -174,12 +179,12 @@ function CoursesScreen({ navigation }) {
   );
 }
 
-// ═══ CHAT TAB — delegates to full AIChatScreen ═══
+// ═══ CHAT TAB ═══
 function ChatScreen({ navigation }) {
   return <AIChatScreen navigation={navigation} route={{ params: {} }} />;
 }
 
-// ═══ SOCIAL TAB — delegates to full SocialFeedScreen ═══
+// ═══ SOCIAL TAB ═══
 function SocialScreen({ navigation }) {
   return <SocialFeedScreen navigation={navigation} />;
 }
@@ -188,16 +193,11 @@ function SocialScreen({ navigation }) {
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const DarkTheme = {
-  ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, background: COLORS.bg, card: COLORS.bg, text: COLORS.t1, border: COLORS.border, primary: COLORS.accent },
-};
-
 function MainTabs() {
   const { isStudent, isFaculty, isAdmin } = useAuth();
+  const { colors: COLORS } = useTheme();
   const isManagement = isFaculty || isAdmin;
 
-  // Icon map including role-specific tabs
   const ICONS = {
     HomeTab:    'home',
     CoursesTab: isStudent ? 'book' : 'briefcase',
@@ -212,7 +212,7 @@ function MainTabs() {
       headerShown: false,
       tabBarStyle: { backgroundColor: COLORS.bg, borderTopColor: COLORS.border, borderTopWidth: 1, height: 68, paddingBottom: 8, paddingTop: 6 },
       tabBarActiveTintColor: COLORS.accent,
-      tabBarInactiveTintColor: '#555',
+      tabBarInactiveTintColor: COLORS.t3,
       tabBarLabelStyle: { fontSize: 9, fontWeight: '600' },
       tabBarIcon: ({ focused, color }) => {
         const base = ICONS[route.name] || 'ellipse';
@@ -233,9 +233,22 @@ function MainTabs() {
 
 export default function AppNavigator() {
   const { isLoggedIn } = useAuth();
+  const { colors: COLORS } = useTheme();
+
+  const navTheme = useMemo(() => ({
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: COLORS.bg,
+      card: COLORS.bg,
+      text: COLORS.t1,
+      border: COLORS.border,
+      primary: COLORS.accent,
+    },
+  }), [COLORS]);
 
   return (
-    <NavigationContainer theme={DarkTheme}>
+    <NavigationContainer theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {!isLoggedIn ? (
           <>
@@ -274,9 +287,3 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
-  topTitle: { fontSize: 18, fontWeight: '700', color: COLORS.t1 },
-});

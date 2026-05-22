@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Card, Avatar, Badge, StatusDot } from '../components/UI';
 import { apiGetStats, apiListUsers } from '../services/api';
 
 export default function AdminDashboardScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,6 +65,40 @@ export default function AdminDashboardScreen({ navigation }) {
 
   const maxBarValue = Math.max(...roleChartData.map(d => d.value), 1);
   const pendingCount = stats?.byStatus?.PENDING || 0;
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
+    title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    scrollContent: { paddingHorizontal: SPACING.xl },
+    statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+    statCard: { flex: 1, minWidth: '44%', backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 16, alignItems: 'center' },
+    statNum: { fontSize: 24, fontWeight: FONT.extrabold },
+    statLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.semibold, marginTop: 2 },
+    pendingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.orange + '10', borderWidth: 1, borderColor: COLORS.orange + '30', borderRadius: RADIUS.lg, padding: 14, marginBottom: 16 },
+    pendingTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.orange },
+    pendingDesc: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    cardTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 14 },
+    barRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+    barLabel: { fontSize: 10, color: COLORS.t3, width: 58, fontWeight: FONT.medium },
+    barTrack: { flex: 1, height: 10, backgroundColor: '#1A1A1A', borderRadius: 5, overflow: 'hidden' },
+    barFill: { height: '100%', borderRadius: 5, minWidth: 4 },
+    barValue: { fontSize: 11, color: COLORS.silver, fontWeight: FONT.semibold, minWidth: 28, textAlign: 'right' },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 },
+    viewAll: { fontSize: 12, color: COLORS.silver },
+    userRow: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingHorizontal: 16, gap: 8 },
+    userRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    userName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    userEmail: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    actionCard: { width: '48%', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16 },
+    actionLabel: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 2 },
+    actionDesc: { fontSize: 10, color: COLORS.t3 },
+    errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+    errorText: { fontSize: 14, color: COLORS.t3, marginVertical: 12, textAlign: 'center' },
+    retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+    retryText: { fontSize: 13, color: COLORS.silver },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -178,37 +214,3 @@ export default function AdminDashboardScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 14, gap: 12 },
-  title: { flex: 1, fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  scrollContent: { paddingHorizontal: SPACING.xl },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  statCard: { flex: 1, minWidth: '44%', backgroundColor: COLORS.card, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, padding: 16, alignItems: 'center' },
-  statNum: { fontSize: 24, fontWeight: FONT.extrabold },
-  statLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.semibold, marginTop: 2 },
-  pendingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.orange + '10', borderWidth: 1, borderColor: COLORS.orange + '30', borderRadius: RADIUS.lg, padding: 14, marginBottom: 16 },
-  pendingTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.orange },
-  pendingDesc: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-  cardTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 14 },
-  barRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  barLabel: { fontSize: 10, color: COLORS.t3, width: 58, fontWeight: FONT.medium },
-  barTrack: { flex: 1, height: 10, backgroundColor: '#1A1A1A', borderRadius: 5, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 5, minWidth: 4 },
-  barValue: { fontSize: 11, color: COLORS.silver, fontWeight: FONT.semibold, minWidth: 28, textAlign: 'right' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 },
-  viewAll: { fontSize: 12, color: COLORS.silver },
-  userRow: { flexDirection: 'row', alignItems: 'center', padding: 12, paddingHorizontal: 16, gap: 8 },
-  userRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  userName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
-  userEmail: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionCard: { width: '48%', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16 },
-  actionLabel: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 2 },
-  actionDesc: { fontSize: 10, color: COLORS.t3 },
-  errorWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  errorText: { fontSize: 14, color: COLORS.t3, marginVertical: 12, textAlign: 'center' },
-  retryBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
-  retryText: { fontSize: 13, color: COLORS.silver },
-});

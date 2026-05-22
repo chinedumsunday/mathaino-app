@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, KeyboardAvoidingView, Platform, ActivityIndicator,
@@ -6,7 +6,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { Avatar } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { apiAIChat, apiYoutubeSearch, apiAIYoutubeSuggest } from '../services/api';
@@ -25,7 +26,7 @@ const QUICK_PROMPTS_LECTURER = [
   'Find YouTube resources',
 ];
 
-function TypingIndicator() {
+function TypingIndicator({ styles }) {
   return (
     <View style={[styles.bubble, styles.aiBubble, { paddingVertical: 14 }]}>
       <View style={styles.dotsRow}>
@@ -37,7 +38,7 @@ function TypingIndicator() {
   );
 }
 
-function YouTubeCard({ videoId, title, channel, onPress }) {
+function YouTubeCard({ videoId, title, channel, onPress, styles, COLORS }) {
   return (
     <TouchableOpacity onPress={onPress} style={styles.ytCard}>
       <View style={styles.ytThumb}>
@@ -53,6 +54,7 @@ function YouTubeCard({ videoId, title, channel, onPress }) {
 }
 
 export default function AIChatScreen({ route, navigation }) {
+  const { colors: COLORS } = useTheme();
   const canGoBack = navigation.canGoBack();
   const { user } = useAuth();
   const courseTitle = route.params?.courseTitle;
@@ -122,6 +124,42 @@ export default function AIChatScreen({ route, navigation }) {
 
   const quickPrompts = isLecturer ? QUICK_PROMPTS_LECTURER : QUICK_PROMPTS_STUDENT;
 
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+    aiAvatarLarge: { width: 34, height: 34, borderRadius: 10, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1 },
+    headerSub: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    ytBtn: { padding: 4 },
+    messageList: { paddingHorizontal: SPACING.xl, paddingVertical: 16, gap: 12 },
+    msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 },
+    msgRowUser: { flexDirection: 'row-reverse' },
+    aiAvatar: { width: 26, height: 26, borderRadius: 8, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    bubble: { maxWidth: '80%', borderRadius: RADIUS.lg, padding: 12 },
+    aiBubble: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
+    userBubble: { backgroundColor: COLORS.accent },
+    errorBubble: { backgroundColor: COLORS.red + '22', borderColor: COLORS.red + '44' },
+    bubbleText: { fontSize: 14, color: COLORS.t1, lineHeight: 20 },
+    userBubbleText: { color: '#000' },
+    dotsRow: { flexDirection: 'row', gap: 4, alignItems: 'center' },
+    dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.accent },
+    ytPanel: { backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.border, maxHeight: 220 },
+    ytPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    ytPanelTitle: { fontSize: 12, fontWeight: FONT.bold, color: COLORS.t1 },
+    ytCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border + '80' },
+    ytThumb: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#FF000018', alignItems: 'center', justifyContent: 'center' },
+    ytTitle: { fontSize: 12, fontWeight: FONT.medium, color: COLORS.t1, lineHeight: 16 },
+    ytChannel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
+    quickRow: { flexWrap: 'wrap', flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, paddingBottom: 8 },
+    quickChip: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: COLORS.accent + '50', backgroundColor: COLORS.accent + '10' },
+    quickChipText: { fontSize: 11, color: COLORS.accent, fontWeight: FONT.medium },
+    inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: SPACING.xl, paddingVertical: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
+    input: { flex: 1, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, paddingHorizontal: 14, paddingVertical: 10, color: COLORS.t1, fontSize: 13, maxHeight: 100 },
+    sendBtn: { width: 42, height: 42, borderRadius: 12, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
+    sendBtnDisabled: { opacity: 0.4 },
+  }), [COLORS]);
+
   const renderMessage = ({ item }) => {
     const isUser = item.role === 'user';
     return (
@@ -168,7 +206,7 @@ export default function AIChatScreen({ route, navigation }) {
           keyExtractor={item => item.id}
           renderItem={renderMessage}
           contentContainerStyle={styles.messageList}
-          ListFooterComponent={loading ? <View style={styles.msgRow}><View style={styles.aiAvatar}><Ionicons name="sparkles" size={14} color="#000" /></View><TypingIndicator /></View> : null}
+          ListFooterComponent={loading ? <View style={styles.msgRow}><View style={styles.aiAvatar}><Ionicons name="sparkles" size={14} color="#000" /></View><TypingIndicator styles={styles} /></View> : null}
           onContentSizeChange={scrollToBottom}
         />
 
@@ -191,6 +229,8 @@ export default function AIChatScreen({ route, navigation }) {
                   title={v.title}
                   channel={v.channel}
                   onPress={() => Linking.openURL(`https://youtube.com/watch?v=${v.id}`)}
+                  styles={styles}
+                  COLORS={COLORS}
                 />
               ))
             }
@@ -232,39 +272,3 @@ export default function AIChatScreen({ route, navigation }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.xl, paddingVertical: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  aiAvatarLarge: { width: 34, height: 34, borderRadius: 10, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1 },
-  headerSub: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
-  ytBtn: { padding: 4 },
-  messageList: { paddingHorizontal: SPACING.xl, paddingVertical: 16, gap: 12 },
-  msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 },
-  msgRowUser: { flexDirection: 'row-reverse' },
-  aiAvatar: { width: 26, height: 26, borderRadius: 8, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  bubble: { maxWidth: '80%', borderRadius: RADIUS.lg, padding: 12 },
-  aiBubble: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
-  userBubble: { backgroundColor: COLORS.accent },
-  errorBubble: { backgroundColor: COLORS.red + '22', borderColor: COLORS.red + '44' },
-  bubbleText: { fontSize: 14, color: COLORS.t1, lineHeight: 20 },
-  userBubbleText: { color: '#000' },
-  dotsRow: { flexDirection: 'row', gap: 4, alignItems: 'center' },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.accent },
-  ytPanel: { backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.border, maxHeight: 220 },
-  ytPanelHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  ytPanelTitle: { fontSize: 12, fontWeight: FONT.bold, color: COLORS.t1 },
-  ytCard: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border + '80' },
-  ytThumb: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#FF000018', alignItems: 'center', justifyContent: 'center' },
-  ytTitle: { fontSize: 12, fontWeight: FONT.medium, color: COLORS.t1, lineHeight: 16 },
-  ytChannel: { fontSize: 10, color: COLORS.t3, marginTop: 2 },
-  quickRow: { flexWrap: 'wrap', flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, paddingBottom: 8 },
-  quickChip: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: COLORS.accent + '50', backgroundColor: COLORS.accent + '10' },
-  quickChipText: { fontSize: 11, color: COLORS.accent, fontWeight: FONT.medium },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: SPACING.xl, paddingVertical: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
-  input: { flex: 1, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, paddingHorizontal: 14, paddingVertical: 10, color: COLORS.t1, fontSize: 13, maxHeight: 100 },
-  sendBtn: { width: 42, height: 42, borderRadius: 12, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
-  sendBtnDisabled: { opacity: 0.4 },
-});

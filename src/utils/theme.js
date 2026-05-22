@@ -1,4 +1,4 @@
-export const COLORS = {
+export const DARK_COLORS = {
   bg: '#000000',
   card: '#111111',
   border: '#1C1C1C',
@@ -14,6 +14,24 @@ export const COLORS = {
   pink: '#FF6B8A',
   orange: '#FFB347',
   teal: '#6BCB77',
+};
+
+export const LIGHT_COLORS = {
+  bg: '#F2F2F7',
+  card: '#FFFFFF',
+  border: '#E0E0E0',
+  elevated: '#FAFAFA',
+  t1: '#111111',
+  t2: '#555555',
+  t3: '#999999',
+  silver: '#666666',
+  accent: '#E6A800',
+  green: '#1FAD5E',
+  red: '#E63939',
+  blue: '#2E86E8',
+  pink: '#E8446E',
+  orange: '#E8952A',
+  teal: '#3FAD5C',
 };
 
 export const SPACING = {
@@ -50,15 +68,15 @@ export const progressColor = (value) => {
   return '#2ECC71';
 };
 
-export const roleBadgeColor = (role) => ({
-  Student: COLORS.blue,
-  Lecturer: COLORS.teal,
-  Faculty: COLORS.orange,
-  'Super Admin': COLORS.pink,
-}[role] || COLORS.blue);
+export const roleBadgeColor = (role, colors) => ({
+  Student: colors.blue,
+  Lecturer: colors.teal,
+  Faculty: colors.orange,
+  'Super Admin': colors.pink,
+}[role] || colors.blue);
 
-export const statusColor = (status) => ({
-  active: COLORS.green,
-  pending: COLORS.orange,
-  suspended: COLORS.red,
-}[status] || COLORS.t3);
+export const statusColor = (status, colors) => ({
+  active: colors.green,
+  pending: colors.orange,
+  suspended: colors.red,
+}[status] || colors.t3);

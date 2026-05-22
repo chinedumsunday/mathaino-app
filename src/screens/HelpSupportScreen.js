@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT, SPACING, RADIUS } from '../utils/theme';
+import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Card } from '../components/UI';
+import { useTheme } from '../context/ThemeContext';
 
 const FAQ = [
   { q: 'How do I enroll in a course?', a: 'Go to Browse Courses, find a course and tap "Enroll Now — Free". You will have immediate access to all content.' },
@@ -16,7 +17,25 @@ const FAQ = [
 ];
 
 export default function HelpSupportScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
   const [expanded, setExpanded] = React.useState(null);
+
+  const styles = useMemo(() => StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.bg },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    title: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
+    contactCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16, marginBottom: 12 },
+    contactTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
+    contactSub: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
+    versionRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 24 },
+    dot: { width: 6, height: 6, borderRadius: 3 },
+    versionText: { fontSize: 11, color: COLORS.t3 },
+    sectionLabel: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    faqItem: { borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingVertical: 14 },
+    faqHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    faqQ: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, flex: 1, lineHeight: 20 },
+    faqA: { fontSize: 12, color: COLORS.t2, lineHeight: 20, marginTop: 10 },
+  }), [COLORS]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -72,19 +91,3 @@ export default function HelpSupportScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.xl, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  title: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1 },
-  contactCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16, marginBottom: 12 },
-  contactTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
-  contactSub: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
-  versionRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 24 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  versionText: { fontSize: 11, color: COLORS.t3 },
-  sectionLabel: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
-  faqItem: { borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingVertical: 14 },
-  faqHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  faqQ: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, flex: 1, lineHeight: 20 },
-  faqA: { fontSize: 12, color: COLORS.t2, lineHeight: 20, marginTop: 10 },
-});

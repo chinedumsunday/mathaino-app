@@ -3,33 +3,41 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 function AppContent() {
   const { loading } = useAuth();
+  const { colors, isDark } = useTheme();
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <View style={styles.logo}>
           <Text style={styles.logoText}>M</Text>
         </View>
-        <Text style={styles.appName}>Mathaino</Text>
-        <ActivityIndicator color="#FFD93D" style={{ marginTop: 20 }} />
+        <Text style={[styles.appName, { color: colors.t1 }]}>Mathaino</Text>
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} />
       </View>
     );
   }
 
-  return <AppNavigator />;
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <AppNavigator />
+    </>
+  );
 }
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar style="light" />
-        <AppContent />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
@@ -37,7 +45,6 @@ export default function App() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -57,7 +64,6 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#E8E8E8',
     marginTop: 14,
     letterSpacing: -0.5,
   },
