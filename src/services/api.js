@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Change this to your deployed URL when ready
-// const API_BASE = 'http://10.0.2.2:3000/api'; // Android emulator
-const API_BASE = 'http://localhost:3000/api'; // iOS simulator / web
-// const API_BASE = 'http://YOUR_IP:3000/api'; // Physical device (use your computer's local IP)
-// const API_BASE = 'https://your-app.onrender.com/api'; // Production
+const API_BASE = 'https://mathaino-backend-production.up.railway.app/api';
 
 let authToken = null;
 
