@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { NavigationContainer, DefaultTheme, useFocusEffect } from '@react-navigation/native';
+import React, { useMemo, useEffect } from 'react';
+import { NavigationContainer, DefaultTheme, useFocusEffect, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -234,9 +234,27 @@ function MainTabs() {
   );
 }
 
+export const navigationRef = createNavigationContainerRef();
+
 export default function AppNavigator() {
   const { isLoggedIn } = useAuth();
   const { colors: COLORS } = useTheme();
+
+  // Tapping a push notification routes to the right screen
+  useEffect(() => {
+    const { addNotificationTapListener } = require('../services/push');
+    const sub = addNotificationTapListener((data) => {
+      if (!navigationRef.isReady() || !isLoggedIn) return;
+      try {
+        if (data.sessionId) {
+          navigationRef.navigate('LiveClassroom', { sessionId: data.sessionId });
+        } else {
+          navigationRef.navigate('Notifications');
+        }
+      } catch (_) {}
+    });
+    return () => sub.remove();
+  }, [isLoggedIn]);
 
   const navTheme = useMemo(() => ({
     ...DefaultTheme,
@@ -251,7 +269,7 @@ export default function AppNavigator() {
   }), [COLORS]);
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {!isLoggedIn ? (
           <>

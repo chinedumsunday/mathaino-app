@@ -1,18 +1,74 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 import { FONT, TYPE, SPACING, RADIUS } from '../utils/theme';
-import { Input, Button } from '../components/UI';
+import { Input, Button, haptic } from '../components/UI';
+import { GOOGLE_WEB_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, isGoogleConfigured } from '../config/auth';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const isExpoGo = Constants.appOwnership === 'expo';
 
 export default function LoginScreen({ navigation }) {
   const { colors: COLORS } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID || undefined,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
+  });
+
+  useEffect(() => {
+    if (!response) return;
+    if (response.type === 'success') {
+      const idToken = response.authentication?.idToken || response.params?.id_token;
+      if (idToken) {
+        handleGoogleToken(idToken);
+      } else {
+        setError('Google did not return a sign-in token. Please try again.');
+      }
+    } else if (response.type === 'error') {
+      setError('Google sign-in failed. Please try again.');
+    }
+  }, [response]);
+
+  const handleGoogleToken = async (idToken) => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      await loginWithGoogle(idToken);
+    } catch (err) {
+      setError(err.message || 'Google sign-in failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGooglePress = () => {
+    setError('');
+    if (!isGoogleConfigured()) {
+      setError('Google sign-in is not configured yet. Add your Google client ID in src/config/auth.js.');
+      return;
+    }
+    if (isExpoGo && Platform.OS !== 'web') {
+      setError('Google sign-in works on the web version and installed builds — Expo Go does not support it. Use email & password here.');
+      return;
+    }
+    haptic.light();
+    promptAsync();
+  };
 
   const handleLogin = async () => {
     setError('');
@@ -44,6 +100,13 @@ export default function LoginScreen({ navigation }) {
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.xl, gap: SPACING.lg },
     dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
     dividerText: { fontSize: TYPE.micro, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1 },
+    googleBtn: {
+      width: '100%', height: 56, borderRadius: RADIUS.lg,
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
+      backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+      marginBottom: SPACING.md,
+    },
+    googleText: { fontSize: TYPE.title, fontWeight: FONT.bold, color: COLORS.t1 },
   }), [COLORS]);
 
   return (
@@ -77,6 +140,15 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
+
+          <Pressable
+            onPress={handleGooglePress}
+            disabled={googleLoading}
+            style={({ pressed }) => ([styles.googleBtn, { opacity: googleLoading ? 0.5 : pressed ? 0.85 : 1 }])}
+          >
+            <Ionicons name="logo-google" size={20} color={COLORS.t1} />
+            <Text style={styles.googleText}>{googleLoading ? 'Signing in…' : 'Continue with Google'}</Text>
+          </Pressable>
 
           <Button variant="secondary" onPress={() => navigation.navigate('Register')}>Create Account</Button>
         </ScrollView>

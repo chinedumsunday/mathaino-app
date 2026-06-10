@@ -1,24 +1,40 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
-import { apiLogin, apiRegister, apiGetMe, apiUpdateProfile, setToken, loadToken } from '../services/api';
+import { apiLogin, apiRegister, apiGetMe, apiUpdateProfile, apiSetPushToken, setToken, loadToken } from '../services/api';
+import { registerForPush } from '../services/push';
 
 let firebaseAuth = null;
 let fbSignIn = null;
 let fbSignOut = null;
 let fbSendReset = null;
+let fbGoogleProvider = null;
+let fbSignInWithCredential = null;
 
 // Dynamic import to handle web vs native
 const initFirebase = async () => {
   try {
     const { auth } = require('../services/firebase');
-    const { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } = require('firebase/auth');
+    const {
+      signInWithEmailAndPassword, signOut, sendPasswordResetEmail,
+      GoogleAuthProvider, signInWithCredential,
+    } = require('firebase/auth');
     firebaseAuth = auth;
     fbSignIn = signInWithEmailAndPassword;
     fbSignOut = signOut;
     fbSendReset = sendPasswordResetEmail;
+    fbGoogleProvider = GoogleAuthProvider;
+    fbSignInWithCredential = signInWithCredential;
   } catch (e) {
     console.warn('Firebase init failed:', e.message);
   }
+};
+
+// Best-effort: get this device's push token and save it server-side
+const syncPushToken = async () => {
+  try {
+    const token = await registerForPush();
+    if (token) await apiSetPushToken(token);
+  } catch (_) {}
 };
 
 const normalizeUser = (raw) => {
@@ -60,6 +76,7 @@ export const AuthProvider = ({ children }) => {
           const res = await apiGetMe();
           setUser(normalizeUser(res.data.user));
           setIsLoggedIn(true);
+          syncPushToken();
         }
       } catch (err) {
         await setToken(null);
@@ -78,6 +95,7 @@ export const AuthProvider = ({ children }) => {
     await setToken(res.data.accessToken);
     setUser(normalizeUser(res.data.user));
     setIsLoggedIn(true);
+    syncPushToken();
     return res.data;
   };
 
@@ -92,6 +110,7 @@ export const AuthProvider = ({ children }) => {
       await setToken(res.data.accessToken);
       setUser(normalizeUser(res.data.user));
       setIsLoggedIn(true);
+      syncPushToken();
       return res.data;
     } catch (err) {
       const code = err.code || '';
@@ -127,8 +146,27 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(true);
   };
 
+  // Sign in with a Google ID token (from expo-auth-session).
+  // New Google users are auto-registered as Students by the backend.
+  const loginWithGoogle = async (googleIdToken) => {
+    if (!firebaseAuth || !fbSignInWithCredential || !fbGoogleProvider) {
+      throw new Error('Firebase not initialized. Please restart the app.');
+    }
+    const credential = fbGoogleProvider.credential(googleIdToken);
+    const cred = await fbSignInWithCredential(firebaseAuth, credential);
+    const idToken = await cred.user.getIdToken();
+    const res = await apiLogin(idToken);
+    await setToken(res.data.accessToken);
+    setUser(normalizeUser(res.data.user));
+    setIsLoggedIn(true);
+    syncPushToken();
+    return res.data;
+  };
+
   const logout = async () => {
     try {
+      // Stop push notifications for this device before the token is gone
+      try { await apiSetPushToken(null); } catch (_) {}
       if (firebaseAuth && fbSignOut) {
         try { await fbSignOut(firebaseAuth); } catch (_) {}
       }
@@ -182,7 +220,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, isLoggedIn, loading,
-      login, devLogin, register, logout, resetPassword, updateUser, addXp, syncXpStreak,
+      login, loginWithGoogle, devLogin, register, logout, resetPassword, updateUser, addXp, syncXpStreak,
       isAdmin, isFaculty, isLecturer, isStudent, canManageUsers, canCreateCourses,
     }}>
       {children}

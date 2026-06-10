@@ -92,6 +92,9 @@ export const apiChangeStatus = (id, status) =>
 export const apiGetStats = () =>
   request('/users/stats');
 
+export const apiSetPushToken = (pushToken) =>
+  request('/users/push-token', { method: 'PATCH', body: JSON.stringify({ pushToken }) });
+
 // ═══ COURSES ═══
 export const apiCreateCourse = (body) =>
   request('/courses', { method: 'POST', body: JSON.stringify(body) });
