@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FONT, TYPE, SPACING, RADIUS } from '../utils/theme';
-import { Button, ConfirmModal, ScreenHeader, haptic } from '../components/UI';
+import { Button, ConfirmModal, ScreenHeader, Toast, useToast, haptic } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -40,6 +40,7 @@ export default function LiveClassroomScreen({ navigation, route }) {
   const appStateRef = useRef(AppState.currentState);
   const heartbeatRef = useRef(null);
   const joinedRef = useRef(false);
+  const { toast, showToast } = useToast();
 
   const isCreator = session && session.creatorId === user?.id;
   const focusMode = !!session?.focusMode;
@@ -85,15 +86,21 @@ export default function LiveClassroomScreen({ navigation, route }) {
     }, HEARTBEAT_MS);
 
     const sub = AppState.addEventListener('change', (next) => {
+      const wasAway = appStateRef.current !== 'active';
       appStateRef.current = next;
       sendHeartbeat(next === 'active' ? 'ACTIVE' : 'BACKGROUND');
+      // Focus-mode pop-up: tell returning students their absence was recorded
+      if (focusMode && !isCreator && next === 'active' && wasAway) {
+        haptic.warning();
+        showToast('Welcome back — the time you spent outside the app was marked on your attendance.', 'error');
+      }
     });
 
     return () => {
       clearInterval(heartbeatRef.current);
       sub.remove();
     };
-  }, [joining, error, sendHeartbeat]);
+  }, [joining, error, sendHeartbeat, focusMode, isCreator, showToast]);
 
   const leave = useCallback(() => {
     clearInterval(heartbeatRef.current);
@@ -152,6 +159,7 @@ export default function LiveClassroomScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <Toast toast={toast} />
       <ScreenHeader
         title={title}
         onBack={requestLeave}
