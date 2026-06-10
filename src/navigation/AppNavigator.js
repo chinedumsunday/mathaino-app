@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FEATURES } from '../config/features';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Card, ProgressBar, Chip, Avatar, Badge, StatusDot } from '../components/UI';
@@ -224,11 +225,14 @@ function MainTabs() {
     })}>
       <Tab.Screen name="HomeTab"    component={HomeScreen}    options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="CoursesTab" component={CoursesScreen} options={{ tabBarLabel: isStudent ? 'Courses' : 'My Courses' }} />
-      <Tab.Screen name="ChatTab"    component={ChatScreen}    options={{ tabBarLabel: 'AI Chat' }} />
-      {isManagement
-        ? <Tab.Screen name="AdminTab"  component={AdminDashboardScreen} options={{ tabBarLabel: 'Admin' }} />
-        : <Tab.Screen name="SocialTab" component={SocialScreen}         options={{ tabBarLabel: 'Social' }} />
-      }
+      {FEATURES.AI_CHAT && (
+        <Tab.Screen name="ChatTab" component={ChatScreen} options={{ tabBarLabel: 'AI Chat' }} />
+      )}
+      {isManagement ? (
+        <Tab.Screen name="AdminTab" component={AdminDashboardScreen} options={{ tabBarLabel: 'Admin' }} />
+      ) : FEATURES.SOCIAL_FEED ? (
+        <Tab.Screen name="SocialTab" component={SocialScreen} options={{ tabBarLabel: 'Social' }} />
+      ) : null}
       <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
@@ -246,7 +250,7 @@ export default function AppNavigator() {
     const sub = addNotificationTapListener((data) => {
       if (!navigationRef.isReady() || !isLoggedIn) return;
       try {
-        if (data.sessionId) {
+        if (data.sessionId && FEATURES.LIVE_CLASSES) {
           navigationRef.navigate('LiveClassroom', { sessionId: data.sessionId });
         } else {
           navigationRef.navigate('Notifications');
@@ -299,12 +303,16 @@ export default function AppNavigator() {
             <Stack.Screen name="CreateStudent" component={CreateStudentScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
             <Stack.Screen name="MyCertificates" component={MyCertificatesScreen} />
-            <Stack.Screen name="AIChat" component={AIChatScreen} />
-            <Stack.Screen name="SocialFeed" component={SocialFeedScreen} />
-            <Stack.Screen name="ScheduleLiveClass" component={ScheduleLiveClassScreen} />
-            <Stack.Screen name="LiveClassroom" component={LiveClassroomScreen} options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
-            <Stack.Screen name="LiveAttendance" component={LiveAttendanceScreen} />
-            <Stack.Screen name="Broadcast" component={BroadcastScreen} />
+            {FEATURES.AI_CHAT && <Stack.Screen name="AIChat" component={AIChatScreen} />}
+            {FEATURES.SOCIAL_FEED && <Stack.Screen name="SocialFeed" component={SocialFeedScreen} />}
+            {FEATURES.LIVE_CLASSES && (
+              <>
+                <Stack.Screen name="ScheduleLiveClass" component={ScheduleLiveClassScreen} />
+                <Stack.Screen name="LiveClassroom" component={LiveClassroomScreen} options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
+                <Stack.Screen name="LiveAttendance" component={LiveAttendanceScreen} />
+              </>
+            )}
+            {FEATURES.ANNOUNCEMENTS && <Stack.Screen name="Broadcast" component={BroadcastScreen} />}
           </>
         )}
       </Stack.Navigator>

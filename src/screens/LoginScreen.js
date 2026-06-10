@@ -8,6 +8,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import { FONT, TYPE, SPACING, RADIUS } from '../utils/theme';
 import { Input, Button, haptic } from '../components/UI';
 import { GOOGLE_WEB_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, isGoogleConfigured } from '../config/auth';
+import { FEATURES } from '../config/features';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -141,14 +142,16 @@ export default function LoginScreen({ navigation }) {
             <View style={styles.dividerLine} />
           </View>
 
-          <Pressable
-            onPress={handleGooglePress}
-            disabled={googleLoading}
-            style={({ pressed }) => ([styles.googleBtn, { opacity: googleLoading ? 0.5 : pressed ? 0.85 : 1 }])}
-          >
-            <Ionicons name="logo-google" size={20} color={COLORS.t1} />
-            <Text style={styles.googleText}>{googleLoading ? 'Signing in…' : 'Continue with Google'}</Text>
-          </Pressable>
+          {FEATURES.GOOGLE_LOGIN && (
+            <Pressable
+              onPress={handleGooglePress}
+              disabled={googleLoading}
+              style={({ pressed }) => ([styles.googleBtn, { opacity: googleLoading ? 0.5 : pressed ? 0.85 : 1 }])}
+            >
+              <Ionicons name="logo-google" size={20} color={COLORS.t1} />
+              <Text style={styles.googleText}>{googleLoading ? 'Signing in…' : 'Continue with Google'}</Text>
+            </Pressable>
+          )}
 
           <Button variant="secondary" onPress={() => navigation.navigate('Register')}>Create Account</Button>
         </ScrollView>

@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FEATURES } from '../config/features';
 import { Avatar, ProgressBar, Card, SectionHeader, Badge } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -220,11 +221,11 @@ function StudentHome({ navigation, user }) {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickGrid}>
             {[
-              { icon: 'chatbubble-ellipses', label: 'AI Chat', color: COLORS.blue, go: () => navigation.navigate('ChatTab') },
+              FEATURES.AI_CHAT && { icon: 'chatbubble-ellipses', label: 'AI Chat', color: COLORS.blue, go: () => navigation.navigate('ChatTab') },
               { icon: 'timer', label: 'Focus', color: COLORS.pink, go: () => navigation.navigate('Focus') },
               { icon: 'trophy', label: 'Ranks', color: COLORS.accent, go: () => navigation.navigate('Leaderboard') },
               { icon: 'compass', label: 'Browse', color: COLORS.teal, go: () => navigation.navigate('Browse') },
-            ].map((a, i) => (
+            ].filter(Boolean).map((a, i) => (
               <TouchableOpacity key={i} onPress={a.go} style={styles.quickAction}>
                 <Ionicons name={a.icon} size={22} color={a.color} />
                 <Text style={styles.quickLabel}>{a.label}</Text>
@@ -233,6 +234,7 @@ function StudentHome({ navigation, user }) {
           </View>
         </View>
 
+        {FEATURES.LIVE_CLASSES && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Live Classes</Text>
           {liveSessions.length === 0 ? (
@@ -269,6 +271,7 @@ function StudentHome({ navigation, user }) {
             })
           )}
         </View>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -403,9 +406,9 @@ function LecturerHome({ navigation, user }) {
             {[
               { icon: 'create-outline', label: 'New Course', color: COLORS.teal, go: () => navigation.navigate('CourseBuilder') },
               { icon: 'people-outline', label: 'Students', color: COLORS.blue, go: () => navigation.navigate('PendingStudents') },
-              { icon: 'radio-outline', label: 'Live Class', color: COLORS.red, go: () => navigation.navigate('ScheduleLiveClass') },
+              FEATURES.LIVE_CLASSES && { icon: 'radio-outline', label: 'Live Class', color: COLORS.red, go: () => navigation.navigate('ScheduleLiveClass') },
               { icon: 'person-add-outline', label: 'Approvals', color: COLORS.orange, go: () => navigation.navigate('PendingStudents') },
-            ].map((a, i) => (
+            ].filter(Boolean).map((a, i) => (
               <TouchableOpacity key={i} onPress={a.go} style={styles.quickAction}>
                 <Ionicons name={a.icon} size={22} color={a.color} />
                 <Text style={styles.quickLabel}>{a.label}</Text>
@@ -415,6 +418,7 @@ function LecturerHome({ navigation, user }) {
         </View>
 
         {/* Upcoming Live Sessions */}
+        {FEATURES.LIVE_CLASSES && (
         <View style={styles.section}>
           <SectionHeader
             title="Upcoming Live Classes"
@@ -465,6 +469,7 @@ function LecturerHome({ navigation, user }) {
             })
           )}
         </View>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -532,12 +537,12 @@ function FacultyHome({ navigation, user }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Manage</Text>
           {[
-            { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify all users about updates & news', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
+            FEATURES.ANNOUNCEMENTS && { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify all users about updates & news', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
             { icon: 'person-add-outline', label: 'Create Lecturer Account', desc: 'Add a new lecturer to the platform', color: COLORS.teal, go: () => navigation.navigate('CreateLecturer') },
             { icon: 'people-outline', label: 'User Management', desc: 'View, approve & manage all users', color: COLORS.blue, go: () => navigation.navigate('UserManagement') },
             { icon: 'book-outline', label: 'All Courses', desc: 'View & manage department courses', color: COLORS.orange, go: () => navigation.navigate('Browse') },
             { icon: 'bar-chart-outline', label: 'Admin Dashboard', desc: 'Stats, audit logs & system health', color: COLORS.pink, go: () => navigation.navigate('AdminDashboard') },
-          ].map((item, i) => (
+          ].filter(Boolean).map((item, i) => (
             <TouchableOpacity key={i} onPress={item.go} style={styles.managementRow}>
               <View style={[styles.managementIcon, { backgroundColor: item.color + '20' }]}>
                 <Ionicons name={item.icon} size={20} color={item.color} />
@@ -649,12 +654,12 @@ function AdminHome({ navigation, user }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           {[
-            { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify everyone about app updates', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
+            FEATURES.ANNOUNCEMENTS && { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify everyone about app updates', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
             { icon: 'people-outline', label: 'Manage Users', desc: 'Roles, status & permissions', color: COLORS.blue, go: () => navigation.navigate('UserManagement') },
             { icon: 'person-add-outline', label: 'Create Lecturer', desc: 'Add a new lecturer account', color: COLORS.teal, go: () => navigation.navigate('CreateLecturer') },
             { icon: 'book-outline', label: 'Course Builder', desc: 'Create & manage courses', color: COLORS.orange, go: () => navigation.navigate('CourseBuilder') },
             { icon: 'shield-checkmark-outline', label: 'Admin Dashboard', desc: 'Full platform overview', color: COLORS.pink, go: () => navigation.navigate('AdminDashboard') },
-          ].map((item, i) => (
+          ].filter(Boolean).map((item, i) => (
             <TouchableOpacity key={i} onPress={item.go} style={styles.managementRow}>
               <View style={[styles.managementIcon, { backgroundColor: item.color + '20' }]}>
                 <Ionicons name={item.icon} size={20} color={item.color} />

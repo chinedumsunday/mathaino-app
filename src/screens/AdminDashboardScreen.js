@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FONT, SPACING, RADIUS } from '../utils/theme';
+import { FEATURES } from '../config/features';
 import { useTheme } from '../context/ThemeContext';
 import { Card, Avatar, Badge, StatusDot } from '../components/UI';
 import { apiGetStats, apiListUsers } from '../services/api';
@@ -42,13 +43,13 @@ export default function AdminDashboardScreen({ navigation }) {
   }[role] || role);
 
   const quickActions = [
-    { label: 'Send Announcement', desc: 'Notify all users', icon: 'megaphone-outline', go: () => navigation.navigate('Broadcast') },
+    FEATURES.ANNOUNCEMENTS && { label: 'Send Announcement', desc: 'Notify all users', icon: 'megaphone-outline', go: () => navigation.navigate('Broadcast') },
     { label: 'Manage Users', desc: 'Roles & permissions', icon: 'people-outline', go: () => navigation.navigate('UserManagement') },
     { label: 'Create Lecturer', desc: 'Add new lecturer', icon: 'person-add-outline', go: () => navigation.navigate('CreateLecturer') },
     { label: 'Register Student', desc: 'Add new student', icon: 'school-outline', go: () => navigation.navigate('CreateStudent') },
     { label: 'Course Builder', desc: 'Create content', icon: 'create-outline', go: () => navigation.navigate('CourseBuilder') },
     { label: 'Leaderboard', desc: 'Student rankings', icon: 'trophy-outline', go: () => navigation.navigate('Leaderboard') },
-  ];
+  ].filter(Boolean);
 
   const statCards = stats ? [
     { n: stats.totalUsers || 0, label: 'Users', color: COLORS.accent, icon: 'people' },

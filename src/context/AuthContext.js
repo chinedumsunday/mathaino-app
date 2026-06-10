@@ -32,6 +32,8 @@ const initFirebase = async () => {
 // Best-effort: get this device's push token and save it server-side
 const syncPushToken = async () => {
   try {
+    const { FEATURES } = require('../config/features');
+    if (!FEATURES.PUSH) return;
     const token = await registerForPush();
     if (token) await apiSetPushToken(token);
   } catch (_) {}
