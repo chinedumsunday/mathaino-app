@@ -9,12 +9,12 @@
 
 export const FEATURES = {
   // Phase 3
-  AI_CHAT: true,
-  SOCIAL_FEED: true,
-  GOOGLE_LOGIN: true,
+  AI_CHAT: false,
+  SOCIAL_FEED: false,
+  GOOGLE_LOGIN: false,
   // Phase 4
-  LIVE_CLASSES: true,
+  LIVE_CLASSES: false,
   // Extras (delivered alongside phase 4)
-  ANNOUNCEMENTS: true,
-  PUSH: true,
+  ANNOUNCEMENTS: false,
+  PUSH: false,
 };
