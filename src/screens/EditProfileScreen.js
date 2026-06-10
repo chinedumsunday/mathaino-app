@@ -89,7 +89,7 @@ export default function EditProfileScreen({ navigation }) {
     errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.md, padding: 12, marginBottom: 14 },
     errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    avatarSheet: { backgroundColor: '#1C1C1C', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
+    avatarSheet: { backgroundColor: COLORS.elevated, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
     sheetTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 16, textAlign: 'center' },
     sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
     sheetOptionText: { fontSize: 14, color: COLORS.t1 },
@@ -121,7 +121,7 @@ export default function EditProfileScreen({ navigation }) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave}>

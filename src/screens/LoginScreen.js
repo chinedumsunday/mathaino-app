@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FONT, SPACING } from '../utils/theme';
+import { FONT, TYPE, SPACING, RADIUS } from '../utils/theme';
 import { Input, Button } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -31,21 +31,19 @@ export default function LoginScreen({ navigation }) {
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.bg },
-    content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xxl },
-    logoWrap: { alignItems: 'center', marginBottom: 36 },
-    logo: { width: 64, height: 64, borderRadius: 18, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-    logoText: { fontSize: 30, fontWeight: FONT.extrabold, color: '#000' },
-    appName: { fontSize: 26, fontWeight: FONT.extrabold, color: COLORS.t1, letterSpacing: -0.5 },
-    tagline: { fontSize: 11, color: COLORS.t3, letterSpacing: 2, textTransform: 'uppercase', marginTop: 6 },
-    errorBox: { backgroundColor: '#FF4D4D18', borderWidth: 1, borderColor: '#FF4D4D40', borderRadius: 12, padding: 12, marginBottom: 16 },
-    errorText: { fontSize: 13, color: '#FF6B6B', textAlign: 'center', lineHeight: 18 },
-    loginBtn: { width: '100%', padding: 15, backgroundColor: COLORS.accent, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-    loginBtnText: { fontSize: 15, fontWeight: FONT.bold, color: '#000' },
-    forgotBtn: { alignItems: 'center', marginTop: 16 },
-    forgotText: { fontSize: 13, color: COLORS.silver },
-    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 24, gap: 16 },
+    content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xl },
+    logoWrap: { alignItems: 'center', marginBottom: SPACING.xxl + SPACING.sm },
+    logo: { width: 72, height: 72, borderRadius: 24, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg },
+    logoText: { fontSize: TYPE.display, fontWeight: FONT.bold, color: '#16181D', letterSpacing: -1 },
+    appName: { fontSize: TYPE.display - 4, fontWeight: FONT.bold, color: COLORS.t1, letterSpacing: -0.5 },
+    tagline: { fontSize: TYPE.micro, color: COLORS.t3, letterSpacing: 2, textTransform: 'uppercase', marginTop: SPACING.sm },
+    errorBox: { backgroundColor: COLORS.red + '14', borderWidth: 1, borderColor: COLORS.red + '40', borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.lg },
+    errorText: { fontSize: TYPE.caption, color: COLORS.red, textAlign: 'center', lineHeight: 18 },
+    forgotBtn: { alignItems: 'center', marginTop: SPACING.lg },
+    forgotText: { fontSize: TYPE.body, color: COLORS.t2 },
+    divider: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.xl, gap: SPACING.lg },
     dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-    dividerText: { fontSize: 11, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1 },
+    dividerText: { fontSize: TYPE.micro, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1 },
   }), [COLORS]);
 
   return (
@@ -53,12 +51,11 @@ export default function LoginScreen({ navigation }) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.logoWrap}>
-            <View style={styles.logo}><Text style={styles.logoText}>M</Text></View>
-            <Text style={styles.appName}>Mathaino</Text>
-            <Text style={styles.tagline}>Learn • Create • Grow</Text>
+            <View style={styles.logo}><Text style={styles.logoText}>iL</Text></View>
+            <Text style={styles.appName}>iLearn</Text>
+            <Text style={styles.tagline}>Learn · Create · Grow</Text>
           </View>
 
-          {/* Error message */}
           {error ? (
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{error}</Text>
@@ -68,9 +65,8 @@ export default function LoginScreen({ navigation }) {
           <Input placeholder="Email address" type="email" value={email} onChangeText={(v) => { setEmail(v); setError(''); }} />
           <Input placeholder="Password" type="password" value={password} onChangeText={(v) => { setPassword(v); setError(''); }} />
 
-          <TouchableOpacity onPress={handleLogin} disabled={loading} style={[styles.loginBtn, loading && { opacity: 0.7 }]} activeOpacity={0.7}>
-            {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.loginBtnText}>Sign In</Text>}
-          </TouchableOpacity>
+          <View style={{ height: SPACING.xs }} />
+          <Button onPress={handleLogin} loading={loading}>Sign In</Button>
 
           <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotBtn}>
             <Text style={styles.forgotText}>Forgot password?</Text>

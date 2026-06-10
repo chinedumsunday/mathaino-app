@@ -42,7 +42,7 @@ export default function MyCertificatesScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>My Certificates</Text>
       </View>

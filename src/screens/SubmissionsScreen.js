@@ -94,7 +94,7 @@ export default function SubmissionsScreen({ route, navigation }) {
     lessonName: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
     statusBadge: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: 10 },
     statusText: { fontSize: 10, fontWeight: FONT.bold },
-    submissionText: { fontSize: 12, color: COLORS.t2, lineHeight: 18, marginBottom: 8, backgroundColor: '#0A0A0A', padding: 10, borderRadius: RADIUS.md },
+    submissionText: { fontSize: 12, color: COLORS.t2, lineHeight: 18, marginBottom: 8, backgroundColor: COLORS.elevated, padding: 10, borderRadius: RADIUS.md },
     fileLink: { fontSize: 11, color: COLORS.blue, marginBottom: 8 },
     cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     submittedAt: { fontSize: 10, color: COLORS.t3, flex: 1 },
@@ -108,17 +108,17 @@ export default function SubmissionsScreen({ route, navigation }) {
     emptyText: { fontSize: 14, color: COLORS.t3, marginTop: 12 },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
     modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl },
-    modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
+    modalHandle: { width: 40, height: 4, backgroundColor: COLORS.border, borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
     modalTitle: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 4 },
     modalSub: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
     modalLabel: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
-    modalInput: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
+    modalInput: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
     modalInputMulti: { height: 90, textAlignVertical: 'top', paddingTop: 12 },
     modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 24 },
     modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
     modalBtnPrimary: { backgroundColor: COLORS.accent },
     modalBtnPrimaryText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-    modalBtnSecondary: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
+    modalBtnSecondary: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border },
     modalBtnSecondaryText: { fontSize: 14, fontWeight: FONT.medium, color: COLORS.t2 },
   }), [COLORS]);
 
@@ -165,7 +165,7 @@ export default function SubmissionsScreen({ route, navigation }) {
           {item.status === 'GRADED' && (
             <TouchableOpacity
               onPress={() => setGradeModal({ visible: true, submission: item, grade: String(item.grade || ''), feedback: item.feedback || '' })}
-              style={[styles.gradeBtn, { backgroundColor: '#1A1A1A' }]}
+              style={[styles.gradeBtn, { backgroundColor: COLORS.elevated }]}
             >
               <Text style={[styles.gradeBtnText, { color: COLORS.t3 }]}>Edit Grade</Text>
             </TouchableOpacity>
@@ -187,7 +187,7 @@ export default function SubmissionsScreen({ route, navigation }) {
       <Toast toast={toast} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Submissions</Text>
       </View>

@@ -56,7 +56,7 @@ function QuizPanel({ contentId, questions, onPassed }) {
   const qStyles = useMemo(() => StyleSheet.create({
     question: { marginBottom: 20 },
     questionText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1, marginBottom: 10, lineHeight: 20 },
-    option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#0A0A0A', marginBottom: 8 },
+    option: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.elevated, marginBottom: 8 },
     optionSelected: { borderColor: COLORS.accent, backgroundColor: COLORS.accent + '15' },
     optionDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: COLORS.t3, alignItems: 'center', justifyContent: 'center' },
     optionDotSelected: { borderColor: COLORS.accent },
@@ -209,7 +209,7 @@ function AssignmentPanel({ contentId, lessonBody, onSubmitted }) {
 
   const aStyles = useMemo(() => StyleSheet.create({
     label: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
-    input: { backgroundColor: '#0A0A0A', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
+    input: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
     inputMulti: { height: 130, paddingTop: 12 },
     errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.red + '15', borderRadius: RADIUS.sm, padding: 10, marginTop: 8 },
     errorText: { fontSize: 12, color: COLORS.red, flex: 1 },
@@ -219,7 +219,7 @@ function AssignmentPanel({ contentId, lessonBody, onSubmitted }) {
     statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     statusText: { fontSize: 14, fontWeight: FONT.semibold },
     grade: { fontSize: 22, fontWeight: FONT.extrabold, color: COLORS.green, marginBottom: 10 },
-    feedback: { backgroundColor: '#0A0A0A', borderRadius: RADIUS.md, padding: 12, marginTop: 8 },
+    feedback: { backgroundColor: COLORS.elevated, borderRadius: RADIUS.md, padding: 12, marginTop: 8 },
     feedbackLabel: { fontSize: 10, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4 },
     feedbackText: { fontSize: 13, color: COLORS.t2, lineHeight: 20 },
     resubmitBtn: { marginTop: 16, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md },
@@ -348,12 +348,12 @@ export default function LessonScreen({ route, navigation }) {
     completedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.green, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10 },
     completedText: { fontSize: 10, fontWeight: FONT.bold, color: '#000' },
     scrollContent: { paddingBottom: 90 },
-    mediaArea: { height: 160, backgroundColor: '#0A0A0A', alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 8 },
+    mediaArea: { height: 160, backgroundColor: COLORS.elevated, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 8 },
     mediaLabel: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
     lessonContent: { padding: SPACING.xl },
     lessonTitle: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
     metaRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-    metaPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#1A1A1A' },
+    metaPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: COLORS.elevated },
     metaText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium },
     bodyText: { fontSize: 13, color: COLORS.t2, lineHeight: 22, marginBottom: 14 },
     bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8, paddingLeft: 4 },
@@ -411,7 +411,7 @@ export default function LessonScreen({ route, navigation }) {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
           </TouchableOpacity>
         </View>
         <View style={styles.center}>
@@ -470,7 +470,7 @@ export default function LessonScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.headerTitle} numberOfLines={1}>{lessonTitle}</Text>

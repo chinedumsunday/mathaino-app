@@ -13,11 +13,12 @@ function AppContent() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
-        <View style={styles.logo}>
-          <Text style={styles.logoText}>M</Text>
+        <View style={[styles.logo, { backgroundColor: colors.accent }]}>
+          <Text style={styles.logoText}>iL</Text>
         </View>
-        <Text style={[styles.appName, { color: colors.t1 }]}>Mathaino</Text>
-        <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} />
+        <Text style={[styles.appName, { color: colors.t1 }]}>iLearn</Text>
+        <Text style={[styles.tagline, { color: colors.t3 }]}>LEARN · CREATE · GROW</Text>
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />
       </View>
     );
   }
@@ -49,22 +50,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: '#FFD93D',
+    width: 72,
+    height: 72,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoText: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#000',
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#16181D',
+    letterSpacing: -1,
   },
   appName: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginTop: 14,
+    fontSize: 24,
+    fontWeight: '700',
+    marginTop: 16,
     letterSpacing: -0.5,
+  },
+  tagline: {
+    fontSize: 11,
+    letterSpacing: 2,
+    marginTop: 8,
   },
 });

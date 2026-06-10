@@ -42,6 +42,7 @@ export default function AdminDashboardScreen({ navigation }) {
   }[role] || role);
 
   const quickActions = [
+    { label: 'Send Announcement', desc: 'Notify all users', icon: 'megaphone-outline', go: () => navigation.navigate('Broadcast') },
     { label: 'Manage Users', desc: 'Roles & permissions', icon: 'people-outline', go: () => navigation.navigate('UserManagement') },
     { label: 'Create Lecturer', desc: 'Add new lecturer', icon: 'person-add-outline', go: () => navigation.navigate('CreateLecturer') },
     { label: 'Register Student', desc: 'Add new student', icon: 'school-outline', go: () => navigation.navigate('CreateStudent') },
@@ -81,7 +82,7 @@ export default function AdminDashboardScreen({ navigation }) {
     cardTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 14 },
     barRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
     barLabel: { fontSize: 10, color: COLORS.t3, width: 58, fontWeight: FONT.medium },
-    barTrack: { flex: 1, height: 10, backgroundColor: '#1A1A1A', borderRadius: 5, overflow: 'hidden' },
+    barTrack: { flex: 1, height: 10, backgroundColor: COLORS.elevated, borderRadius: 5, overflow: 'hidden' },
     barFill: { height: '100%', borderRadius: 5, minWidth: 4 },
     barValue: { fontSize: 11, color: COLORS.silver, fontWeight: FONT.semibold, minWidth: 28, textAlign: 'right' },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 0 },
@@ -103,9 +104,11 @@ export default function AdminDashboardScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
-        </TouchableOpacity>
+        {navigation.canGoBack() ? (
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
+          </TouchableOpacity>
+        ) : null}
         <Text style={styles.title}>Dashboard</Text>
         <Ionicons name="shield-checkmark" size={22} color={COLORS.accent} />
       </View>

@@ -66,7 +66,7 @@ export default function PendingStudentsScreen({ navigation }) {
     cardTop: { flexDirection: 'row', alignItems: 'center' },
     studentName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t1 },
     studentEmail: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
-    dateWrap: { backgroundColor: '#1A1A1A', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    dateWrap: { backgroundColor: COLORS.elevated, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
     dateText: { fontSize: 10, color: COLORS.t3 },
     courseRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     courseTitle: { flex: 1, fontSize: 12, color: COLORS.t2 },
@@ -146,7 +146,7 @@ export default function PendingStudentsScreen({ navigation }) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Pending Approvals</Text>
         {enrollments.length > 0 && (

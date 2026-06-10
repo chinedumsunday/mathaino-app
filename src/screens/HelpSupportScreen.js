@@ -41,7 +41,7 @@ export default function HelpSupportScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Help & Support</Text>
       </View>
@@ -60,7 +60,7 @@ export default function HelpSupportScreen({ navigation }) {
         </View>
 
         <View style={styles.versionRow}>
-          <Text style={styles.versionText}>Mathaino v1.0.0</Text>
+          <Text style={styles.versionText}>iLearn v1.0.0</Text>
           <View style={[styles.dot, { backgroundColor: COLORS.green }]} />
           <Text style={styles.versionText}>All systems online</Text>
         </View>

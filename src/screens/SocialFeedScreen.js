@@ -419,12 +419,12 @@ export default function SocialFeedScreen({ navigation }) {
       borderTopWidth: 1, borderTopColor: COLORS.border, gap: 8,
     },
     commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-    commentBubble: { flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md, padding: 8 },
+    commentBubble: { flex: 1, backgroundColor: COLORS.elevated, borderRadius: RADIUS.md, padding: 8 },
     commentAuthor: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.t2, marginBottom: 2 },
     commentBody: { fontSize: 12, color: COLORS.t1, lineHeight: 17 },
     commentInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
     commentTextInput: {
-      flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md,
+      flex: 1, backgroundColor: COLORS.elevated, borderRadius: RADIUS.md,
       paddingHorizontal: 10, paddingVertical: 7, color: COLORS.t1, fontSize: 12,
     },
 
@@ -437,11 +437,11 @@ export default function SocialFeedScreen({ navigation }) {
       backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20,
       padding: SPACING.xl, maxHeight: '85%',
     },
-    ytModalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+    ytModalHandle: { width: 40, height: 4, backgroundColor: COLORS.border, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
     ytModalTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 14 },
     ytSearchRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
     ytSearchInput: {
-      flex: 1, backgroundColor: '#111', borderRadius: RADIUS.md,
+      flex: 1, backgroundColor: COLORS.elevated, borderRadius: RADIUS.md,
       paddingHorizontal: 12, paddingVertical: 10, color: COLORS.t1, fontSize: 13,
     },
     ytSearchBtn: {
@@ -469,7 +469,7 @@ export default function SocialFeedScreen({ navigation }) {
       <View style={styles.header}>
         {canGoBack
           ? <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+              <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
             </TouchableOpacity>
           : <View style={{ width: 32 }} />
         }

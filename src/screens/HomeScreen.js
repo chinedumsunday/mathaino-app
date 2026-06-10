@@ -17,7 +17,19 @@ import {
   apiPendingEnrollments,
   apiListLiveSessions,
   apiGetLeaderboard,
+  apiStartLiveSession,
 } from '../services/api';
+
+// Students join in-app rooms inside the app; external platforms open their own app
+function openSession(session, navigation) {
+  if (session.platform === 'in_app') {
+    navigation.navigate('LiveClassroom', { session });
+  } else {
+    const url = session.meetingLink;
+    if (Platform.OS === 'web') window.open(url, '_blank');
+    else Linking.openURL(url);
+  }
+}
 
 // ─── Shared header used by all role views ────────────────────────────────────
 function HomeHeader({ user, navigation, roleColor, roleLabel }) {
@@ -123,8 +135,8 @@ function StudentHome({ navigation, user }) {
 
         <View style={styles.statsRow}>
           <View style={styles.statPill}>
-            <Ionicons name="flame" size={14} color="#FF8C42" />
-            <Text style={[styles.statText, { color: '#FF8C42' }]}>{user?.streak || 0} day streak</Text>
+            <Ionicons name="flame" size={14} color={COLORS.orange} />
+            <Text style={[styles.statText, { color: COLORS.orange }]}>{user?.streak || 0} day streak</Text>
           </View>
           <View style={styles.statPill}>
             <Text style={[styles.statText, { color: COLORS.accent }]}>{(user?.xp || 0).toLocaleString()} XP</Text>
@@ -141,7 +153,7 @@ function StudentHome({ navigation, user }) {
           <Ionicons name="search" size={16} color={COLORS.t3} style={styles.searchIcon} />
           <TextInput
             placeholder="Search courses, topics..."
-            placeholderTextColor="#444"
+            placeholderTextColor={COLORS.t3}
             style={styles.searchInput}
             onFocus={() => navigation.navigate('Browse')}
           />
@@ -222,36 +234,36 @@ function StudentHome({ navigation, user }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upcoming Live Classes</Text>
+          <Text style={styles.sectionTitle}>Live Classes</Text>
           {liveSessions.length === 0 ? (
             <Card style={styles.upcomingEmpty}>
               <Ionicons name="calendar-outline" size={22} color={COLORS.t3} />
               <Text style={styles.upcomingEmptyText}>No upcoming live classes</Text>
             </Card>
           ) : (
-            liveSessions.slice(0, 3).map(session => {
+            liveSessions.slice(0, 4).map(session => {
+              const isLive = session.status === 'LIVE';
               const d = new Date(session.scheduledAt);
               const dateStr = d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
               return (
-                <Card key={session.id} style={styles.liveCard}>
+                <Card key={session.id} style={[styles.liveCard, isLive && styles.liveCardActive]}>
                   <View style={styles.liveCardLeft}>
-                    <View style={styles.liveDot} />
+                    <View style={[styles.liveDot, { backgroundColor: isLive ? COLORS.red : COLORS.t3 }]} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.liveTitle} numberOfLines={1}>{session.title}</Text>
                       <Text style={styles.liveCourse} numberOfLines={1}>{session.course?.title}</Text>
-                      <Text style={styles.liveTime}>{dateStr}</Text>
+                      <Text style={[styles.liveTime, { color: isLive ? COLORS.red : COLORS.t3 }]}>
+                        {isLive ? 'Happening now' : dateStr}
+                      </Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      const url = session.meetingLink;
-                      if (Platform.OS === 'web') { window.open(url, '_blank'); }
-                      else { Linking.openURL(url); }
-                    }}
-                    style={styles.joinBtn}
-                  >
-                    <Text style={styles.joinBtnText}>Join</Text>
-                  </TouchableOpacity>
+                  {isLive ? (
+                    <TouchableOpacity onPress={() => openSession(session, navigation)} style={styles.joinBtn}>
+                      <Text style={styles.joinBtnText}>Join Now</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Ionicons name="time-outline" size={18} color={COLORS.t3} />
+                  )}
                 </Card>
               );
             })
@@ -273,6 +285,27 @@ function LecturerHome({ navigation, user }) {
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [starting, setStarting] = useState(null);
+
+  const goLive = async (session) => {
+    setStarting(session.id);
+    try {
+      const res = await apiStartLiveSession(session.id, session.focusMode);
+      const live = { ...session, ...res.data.session };
+      setUpcomingSessions(prev => prev.map(s => (s.id === session.id ? live : s)));
+      if (session.platform === 'in_app') {
+        navigation.navigate('LiveClassroom', { session: live });
+      } else {
+        openSession(session, navigation);
+        navigation.navigate('LiveAttendance', { sessionId: session.id });
+      }
+    } catch (e) {
+      // Session may already be live — refresh the list
+      load();
+    } finally {
+      setStarting(null);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -352,7 +385,7 @@ function LecturerHome({ navigation, user }) {
                 <View style={styles.lcMeta}>
                   <Text style={styles.lcStat}>{c._count?.enrollments || 0} students</Text>
                   <Text style={styles.lcStat}>{c._count?.modules || 0} modules</Text>
-                  <View style={[styles.publishBadge, { backgroundColor: c.isPublished ? COLORS.teal + '20' : '#1A1A1A' }]}>
+                  <View style={[styles.publishBadge, { backgroundColor: c.isPublished ? COLORS.teal + '20' : COLORS.elevated }]}>
                     <Text style={[styles.publishText, { color: c.isPublished ? COLORS.teal : COLORS.t3 }]}>
                       {c.isPublished ? 'Published' : 'Draft'}
                     </Text>
@@ -395,28 +428,38 @@ function LecturerHome({ navigation, user }) {
             </Card>
           ) : (
             upcomingSessions.slice(0, 3).map(session => {
+              const isLive = session.status === 'LIVE';
               const d = new Date(session.scheduledAt);
               const dateStr = d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
               return (
-                <Card key={session.id} style={styles.liveCard}>
+                <Card key={session.id} style={[styles.liveCard, isLive && styles.liveCardActive]}>
                   <View style={styles.liveCardLeft}>
-                    <View style={styles.liveDot} />
+                    <View style={[styles.liveDot, { backgroundColor: isLive ? COLORS.red : COLORS.t3 }]} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.liveTitle} numberOfLines={1}>{session.title}</Text>
                       <Text style={styles.liveCourse} numberOfLines={1}>{session.course?.title}</Text>
-                      <Text style={styles.liveTime}>{dateStr}</Text>
+                      <Text style={[styles.liveTime, { color: isLive ? COLORS.red : COLORS.t3 }]}>
+                        {isLive ? 'Live now' : dateStr}
+                      </Text>
                     </View>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      const url = session.meetingLink;
-                      if (Platform.OS === 'web') { window.open(url, '_blank'); }
-                      else { Linking.openURL(url); }
-                    }}
-                    style={styles.joinBtn}
-                  >
-                    <Text style={styles.joinBtnText}>Open</Text>
-                  </TouchableOpacity>
+                  {isLive ? (
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('LiveAttendance', { sessionId: session.id })}
+                      style={styles.joinBtn}
+                    >
+                      <Text style={styles.joinBtnText}>Roster</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => goLive(session)}
+                      disabled={starting === session.id}
+                      style={styles.goLiveBtn}
+                    >
+                      <Ionicons name="radio" size={13} color={COLORS.green} />
+                      <Text style={styles.goLiveBtnText}>{starting === session.id ? 'Starting…' : 'Go Live'}</Text>
+                    </TouchableOpacity>
+                  )}
                 </Card>
               );
             })
@@ -489,9 +532,10 @@ function FacultyHome({ navigation, user }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Manage</Text>
           {[
+            { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify all users about updates & news', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
             { icon: 'person-add-outline', label: 'Create Lecturer Account', desc: 'Add a new lecturer to the platform', color: COLORS.teal, go: () => navigation.navigate('CreateLecturer') },
             { icon: 'people-outline', label: 'User Management', desc: 'View, approve & manage all users', color: COLORS.blue, go: () => navigation.navigate('UserManagement') },
-            { icon: 'book-outline', label: 'All Courses', desc: 'View & manage department courses', color: COLORS.accent, go: () => navigation.navigate('Browse') },
+            { icon: 'book-outline', label: 'All Courses', desc: 'View & manage department courses', color: COLORS.orange, go: () => navigation.navigate('Browse') },
             { icon: 'bar-chart-outline', label: 'Admin Dashboard', desc: 'Stats, audit logs & system health', color: COLORS.pink, go: () => navigation.navigate('AdminDashboard') },
           ].map((item, i) => (
             <TouchableOpacity key={i} onPress={item.go} style={styles.managementRow}>
@@ -605,9 +649,10 @@ function AdminHome({ navigation, user }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           {[
+            { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify everyone about app updates', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
             { icon: 'people-outline', label: 'Manage Users', desc: 'Roles, status & permissions', color: COLORS.blue, go: () => navigation.navigate('UserManagement') },
             { icon: 'person-add-outline', label: 'Create Lecturer', desc: 'Add a new lecturer account', color: COLORS.teal, go: () => navigation.navigate('CreateLecturer') },
-            { icon: 'book-outline', label: 'Course Builder', desc: 'Create & manage courses', color: COLORS.accent, go: () => navigation.navigate('CourseBuilder') },
+            { icon: 'book-outline', label: 'Course Builder', desc: 'Create & manage courses', color: COLORS.orange, go: () => navigation.navigate('CourseBuilder') },
             { icon: 'shield-checkmark-outline', label: 'Admin Dashboard', desc: 'Full platform overview', color: COLORS.pink, go: () => navigation.navigate('AdminDashboard') },
           ].map((item, i) => (
             <TouchableOpacity key={i} onPress={item.go} style={styles.managementRow}>
@@ -653,7 +698,7 @@ function useHomeStyles() {
     bellWrap: { position: 'relative', padding: 2 },
     bellDot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.red, borderWidth: 2, borderColor: COLORS.bg },
     statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SPACING.xl, marginBottom: 16 },
-    statPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#1A1A1A' },
+    statPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 10, backgroundColor: COLORS.elevated },
     statText: { fontSize: 11, fontWeight: FONT.bold },
     searchWrap: { marginHorizontal: SPACING.xl, marginBottom: 18, position: 'relative' },
     searchIcon: { position: 'absolute', left: 14, top: 14, zIndex: 1 },
@@ -708,12 +753,15 @@ function useHomeStyles() {
     completedText: { fontSize: 11, color: COLORS.teal, fontWeight: FONT.semibold },
     // Live session cards
     liveCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+    liveCardActive: { borderColor: COLORS.red + '50' },
     liveCardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
     liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.red, marginTop: 2 },
     liveTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
     liveCourse: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
     liveTime: { fontSize: 10, color: COLORS.accent, marginTop: 2 },
-    joinBtn: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: RADIUS.sm, backgroundColor: COLORS.red + '15', borderWidth: 1, borderColor: COLORS.red },
+    joinBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: RADIUS.sm, backgroundColor: COLORS.red + '15', borderWidth: 1, borderColor: COLORS.red },
     joinBtnText: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.red },
+    goLiveBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 14, borderRadius: RADIUS.sm, backgroundColor: COLORS.green + '14', borderWidth: 1, borderColor: COLORS.green },
+    goLiveBtnText: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.green },
   }), [COLORS]);
 }

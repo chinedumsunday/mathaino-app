@@ -113,7 +113,7 @@ export default function CreateStudentScreen({ navigation }) {
           if (!hasChanges) { navigation.goBack(); return; }
           setDiscardVisible(true);
         }}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Register Student</Text>
       </View>

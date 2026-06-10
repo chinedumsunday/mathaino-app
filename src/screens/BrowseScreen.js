@@ -143,7 +143,7 @@ export default function BrowseScreen({ navigation }) {
       <Toast toast={toast} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Browse Courses</Text>
       </View>
@@ -173,7 +173,7 @@ export default function BrowseScreen({ navigation }) {
         <Ionicons name="search" size={16} color={COLORS.t3} style={styles.searchIcon} />
         <TextInput
           placeholder="Search by title, code or topic..."
-          placeholderTextColor="#444"
+          placeholderTextColor={COLORS.t3}
           value={search}
           onChangeText={setSearch}
           style={styles.searchInput}

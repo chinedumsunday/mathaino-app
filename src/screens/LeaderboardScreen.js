@@ -91,7 +91,7 @@ export default function LeaderboardScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Leaderboard</Text>
         <Ionicons name="trophy" size={22} color={COLORS.accent} />
@@ -175,7 +175,7 @@ export default function LeaderboardScreen({ navigation }) {
                   <Text style={styles.rankNum}>#{i + 4}</Text>
                   <View style={{ position: 'relative' }}>
                     <Avatar size={38} name={name} url={isYou ? user.avatarUrl : person.avatarUrl} />
-                    <View style={[styles.onlineDot, { backgroundColor: isOnline(person.lastActiveAt) ? COLORS.green : '#333' }]} />
+                    <View style={[styles.onlineDot, { backgroundColor: isOnline(person.lastActiveAt) ? COLORS.green : COLORS.border }]} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.rankName, isYou && { color: COLORS.accent }]}>

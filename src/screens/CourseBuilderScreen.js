@@ -84,7 +84,7 @@ export default function CourseBuilderScreen({ navigation }) {
     scrollContent: { paddingHorizontal: SPACING.xxl, paddingBottom: 20 },
     label: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 4, marginLeft: 2 },
     imageUpload: { marginBottom: 16, borderRadius: RADIUS.lg, overflow: 'hidden' },
-    imagePlaceholder: { borderWidth: 2, borderStyle: 'dashed', borderColor: '#333', borderRadius: RADIUS.lg, padding: 32, alignItems: 'center', backgroundColor: '#0A0A0A' },
+    imagePlaceholder: { borderWidth: 2, borderStyle: 'dashed', borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 32, alignItems: 'center', backgroundColor: COLORS.elevated },
     imagePlaceholderText: { fontSize: 12, color: COLORS.t3, fontWeight: FONT.medium, marginTop: 8 },
     imagePlaceholderHint: { fontSize: 10, color: COLORS.t3, marginTop: 4, opacity: 0.6 },
     imagePreviewWrap: { position: 'relative' },
@@ -140,7 +140,7 @@ export default function CourseBuilderScreen({ navigation }) {
           if (!hasChanges) { navigation.goBack(); return; }
           setDiscardVisible(true);
         }}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Create Course</Text>
       </View>
@@ -187,7 +187,7 @@ export default function CourseBuilderScreen({ navigation }) {
           <Switch
             value={form.publishNow}
             onValueChange={v => update('publishNow', v)}
-            trackColor={{ false: '#1A1A1A', true: COLORS.accent + '60' }}
+            trackColor={{ false: COLORS.elevated, true: COLORS.accent + '60' }}
             thumbColor={form.publishNow ? COLORS.accent : COLORS.t3}
           />
         </View>

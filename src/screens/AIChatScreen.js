@@ -181,7 +181,7 @@ export default function AIChatScreen({ route, navigation }) {
       <View style={styles.header}>
         {canGoBack
           ? <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+              <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
             </TouchableOpacity>
           : <View style={{ width: 32 }} />
         }

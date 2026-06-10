@@ -103,7 +103,7 @@ export default function SettingsScreen({ navigation }) {
       <Toast toast={toast} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Settings</Text>
       </View>

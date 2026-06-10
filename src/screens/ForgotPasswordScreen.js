@@ -176,7 +176,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       <View style={styles.header}>
         {step < 4 && (
           <TouchableOpacity onPress={() => { setError(''); step > 1 ? setStep(step - 1) : navigation.goBack(); }}>
-            <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
           </TouchableOpacity>
         )}
         <Text style={styles.title}>Reset Password</Text>

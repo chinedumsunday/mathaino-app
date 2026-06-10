@@ -110,7 +110,7 @@ export default function UserDetailScreen({ route, navigation }) {
     infoValue: { fontSize: 12, color: COLORS.silver, fontWeight: FONT.semibold },
     actionsTitle: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginTop: 20, marginBottom: 12 },
     roleOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-    roleSheet: { backgroundColor: '#1C1C1C', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
+    roleSheet: { backgroundColor: COLORS.elevated, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34 },
     roleSheetTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 4 },
     roleSheetSub: { fontSize: 12, color: COLORS.t3, marginBottom: 16 },
     roleOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
@@ -123,7 +123,7 @@ export default function UserDetailScreen({ route, navigation }) {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
           </TouchableOpacity>
           <Text style={styles.title}>User Detail</Text>
         </View>
@@ -193,7 +193,7 @@ export default function UserDetailScreen({ route, navigation }) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>User Detail</Text>
         {acting && <ActivityIndicator color={COLORS.accent} size="small" />}

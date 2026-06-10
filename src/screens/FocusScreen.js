@@ -153,7 +153,7 @@ export default function FocusScreen({ navigation }) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Focus Mode</Text>
         <Ionicons name="timer" size={22} color={COLORS.pink} />
@@ -166,7 +166,7 @@ export default function FocusScreen({ navigation }) {
             <Circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#1A1A1A" strokeWidth={strokeWidth} />
             <Circle
               cx={size / 2} cy={size / 2} r={radius} fill="none"
-              stroke={active ? progressColor(pct) : '#333'}
+              stroke={active ? progressColor(pct) : COLORS.border}
               strokeWidth={strokeWidth}
               strokeLinecap="round"
               strokeDasharray={circumference}

@@ -75,7 +75,7 @@ export default function CreateLecturerScreen({ navigation }) {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
           </TouchableOpacity>
           <Text style={styles.title}>Create Lecturer</Text>
         </View>

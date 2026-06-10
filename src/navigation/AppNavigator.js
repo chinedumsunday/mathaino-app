@@ -44,6 +44,9 @@ import MyCertificatesScreen from '../screens/MyCertificatesScreen';
 import AIChatScreen from '../screens/AIChatScreen';
 import SocialFeedScreen from '../screens/SocialFeedScreen';
 import ScheduleLiveClassScreen from '../screens/ScheduleLiveClassScreen';
+import LiveClassroomScreen from '../screens/LiveClassroomScreen';
+import LiveAttendanceScreen from '../screens/LiveAttendanceScreen';
+import BroadcastScreen from '../screens/BroadcastScreen';
 
 // ═══ COURSES TAB (role-aware) ═══
 function CoursesScreen({ navigation }) {
@@ -281,6 +284,9 @@ export default function AppNavigator() {
             <Stack.Screen name="AIChat" component={AIChatScreen} />
             <Stack.Screen name="SocialFeed" component={SocialFeedScreen} />
             <Stack.Screen name="ScheduleLiveClass" component={ScheduleLiveClassScreen} />
+            <Stack.Screen name="LiveClassroom" component={LiveClassroomScreen} options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
+            <Stack.Screen name="LiveAttendance" component={LiveAttendanceScreen} />
+            <Stack.Screen name="Broadcast" component={BroadcastScreen} />
           </>
         )}
       </Stack.Navigator>

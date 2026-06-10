@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Change this to your deployed URL when ready
-// const API_BASE = 'http://10.0.2.2:3000/api'; // Android emulator
-const API_BASE = 'http://localhost:3000/api'; // iOS simulator / web
-// const API_BASE = 'http://YOUR_IP:3000/api'; // Physical device (use your computer's local IP)
-// const API_BASE = 'https://your-app.onrender.com/api'; // Production
+const API_BASE = 'https://mathaino-backend-production.up.railway.app/api';
 
 let authToken = null;
 
@@ -318,6 +314,28 @@ export const apiListLiveSessions = (params = {}) => {
 
 export const apiCancelLiveSession = (id) =>
   request(`/live-sessions/${id}/cancel`, { method: 'PATCH' });
+
+export const apiStartLiveSession = (id, focusMode) =>
+  request(`/live-sessions/${id}/start`, { method: 'PATCH', body: JSON.stringify({ focusMode }) });
+
+export const apiEndLiveSession = (id) =>
+  request(`/live-sessions/${id}/end`, { method: 'PATCH' });
+
+export const apiJoinLiveSession = (id) =>
+  request(`/live-sessions/${id}/join`, { method: 'POST' });
+
+export const apiSessionHeartbeat = (id, state) =>
+  request(`/live-sessions/${id}/heartbeat`, { method: 'POST', body: JSON.stringify({ state }) });
+
+export const apiLeaveLiveSession = (id) =>
+  request(`/live-sessions/${id}/leave`, { method: 'POST' });
+
+export const apiSessionAttendance = (id) =>
+  request(`/live-sessions/${id}/attendance`);
+
+// ═══ BROADCAST (admin/faculty) ═══
+export const apiBroadcastNotification = (title, message, audience = 'ALL') =>
+  request('/notifications/broadcast', { method: 'POST', body: JSON.stringify({ title, message, audience }) });
 
 // ═══ HEALTH ═══
 export const apiHealth = () =>

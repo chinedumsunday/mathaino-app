@@ -61,7 +61,7 @@ export default function CourseDetailScreen({ route, navigation }) {
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.bg },
-    hero: { height: 150, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
+    hero: { height: 150, backgroundColor: COLORS.elevated, alignItems: 'center', justifyContent: 'center' },
     heroEmoji: { fontSize: 64 },
     backBtn: { position: 'absolute', top: 14, left: 14 },
     content: { padding: SPACING.xl },
@@ -90,7 +90,7 @@ export default function CourseDetailScreen({ route, navigation }) {
     moduleNum: { fontSize: 12, fontWeight: FONT.extrabold, color: COLORS.accent, minWidth: 24 },
     moduleTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1, flex: 1 },
     moduleLessonCount: { fontSize: 10, color: COLORS.t3, marginRight: 4 },
-    lessonList: { backgroundColor: '#0A0A0A', borderWidth: 1, borderTopWidth: 0, borderColor: COLORS.border, borderBottomLeftRadius: RADIUS.lg, borderBottomRightRadius: RADIUS.lg, paddingVertical: 6 },
+    lessonList: { backgroundColor: COLORS.elevated, borderWidth: 1, borderTopWidth: 0, borderColor: COLORS.border, borderBottomLeftRadius: RADIUS.lg, borderBottomRightRadius: RADIUS.lg, paddingVertical: 6 },
     lessonRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 16, paddingLeft: 50 },
     lessonTitle: { fontSize: 12, color: COLORS.t2, flex: 1 },
     lessonDone: { textDecorationLine: 'line-through', color: COLORS.green },
@@ -131,27 +131,27 @@ export default function CourseDetailScreen({ route, navigation }) {
     replyAuthor: { fontSize: 11, fontWeight: FONT.semibold, color: COLORS.t2 },
     replyBody: { fontSize: 12, color: COLORS.t3, marginTop: 2 },
     replyInput: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-    replyTextInput: { flex: 1, backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: COLORS.t1 },
+    replyTextInput: { flex: 1, backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: COLORS.t1 },
     replyBtn: { padding: 8 },
     // Modal
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
     modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl, maxHeight: '90%' },
-    modalHandle: { width: 40, height: 4, backgroundColor: '#333', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
+    modalHandle: { width: 40, height: 4, backgroundColor: COLORS.border, borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
     modalTitle: { fontSize: 17, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 20 },
     modalLabel: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium, marginBottom: 6, marginTop: 14 },
-    modalInput: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
+    modalInput: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: COLORS.t1 },
     modalInputMulti: { height: 90, textAlignVertical: 'top', paddingTop: 12 },
     typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    typeChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#111' },
+    typeChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.elevated },
     typeChipText: { fontSize: 11, color: COLORS.t3, fontWeight: FONT.medium },
     modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 24 },
     modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
     modalBtnPrimary: { backgroundColor: COLORS.accent },
     modalBtnPrimaryText: { fontSize: 14, fontWeight: FONT.bold, color: '#000' },
-    modalBtnSecondary: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
+    modalBtnSecondary: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border },
     modalBtnSecondaryText: { fontSize: 14, fontWeight: FONT.medium, color: COLORS.t2 },
     // Quiz builder
-    questionBlock: { backgroundColor: '#111', borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 },
+    questionBlock: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 },
     questionNum: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.accent },
     radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: COLORS.t3, alignItems: 'center', justifyContent: 'center' },
     radioOuterActive: { borderColor: COLORS.accent },
@@ -419,7 +419,7 @@ export default function CourseDetailScreen({ route, navigation }) {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.hero}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
           </TouchableOpacity>
         </View>
         <ActivityIndicator color={COLORS.accent} style={{ marginTop: 60 }} />
@@ -436,7 +436,7 @@ export default function CourseDetailScreen({ route, navigation }) {
       <View style={styles.hero}>
         <Text style={styles.heroEmoji}>{courseEmoji(course)}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
       </View>
 

@@ -55,7 +55,7 @@ export default function ProfileScreen({ navigation }) {
     modalMessage: { fontSize: 13, color: COLORS.t3, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
     modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
     modalBtn: { flex: 1, paddingVertical: 13, borderRadius: RADIUS.md, alignItems: 'center' },
-    modalBtnCancel: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: COLORS.border },
+    modalBtnCancel: { backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border },
     modalBtnCancelText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.t2 },
     modalBtnConfirm: { backgroundColor: COLORS.red },
     modalBtnConfirmText: { fontSize: 14, fontWeight: FONT.bold, color: '#fff' },

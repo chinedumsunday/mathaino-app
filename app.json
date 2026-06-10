@@ -1,21 +1,37 @@
 {
   "expo": {
-    "name": "Mathaino",
+    "name": "iLearn",
     "slug": "mathaino-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "splash": {
-      "backgroundColor": "#000000"
+      "backgroundColor": "#0B0C0F"
     },
     "assetBundlePatterns": ["**/*"],
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#000000"
+        "backgroundColor": "#0B0C0F"
       },
-      "package": "com.mathaino.app"
+      "package": "com.mathaino.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
-    "plugins": ["expo-image-picker"]
+    "ios": {
+      "infoPlist": {
+        "NSCameraUsageDescription": "iLearn uses the camera so you can join live classes with video.",
+        "NSMicrophoneUsageDescription": "iLearn uses the microphone so you can speak in live classes."
+      }
+    },
+    "plugins": ["expo-image-picker"],
+    "extra": {
+      "eas": {
+        "projectId": "a45184e1-a365-45ac-9707-980c9a3fd6a0"
+      }
+    }
   }
 }

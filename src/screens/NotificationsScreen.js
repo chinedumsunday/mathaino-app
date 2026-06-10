@@ -8,6 +8,8 @@ import { useTheme } from '../context/ThemeContext';
 
 // Map backend notification titles/types to accent colors
 const accentForNotif = (n, COLORS) => {
+  if (n.type === 'announcement') return COLORS.accent;
+  if (n.type === 'live_started' || n.type === 'live_reminder') return COLORS.red;
   const t = (n.title || '').toLowerCase();
   if (t.includes('approved') || t.includes('complete') || t.includes('enrolled')) return COLORS.green;
   if (t.includes('rejected') || t.includes('error')) return COLORS.pink;
@@ -98,7 +100,7 @@ export default function NotificationsScreen({ navigation }) {
       overflow: 'hidden',
       flexDirection: 'row',
     },
-    notifUnread: { backgroundColor: '#0A0A0A' },
+    notifUnread: { backgroundColor: COLORS.elevated },
     accentBar: { width: 3 },
     notifContent: { flex: 1, flexDirection: 'row', padding: 14, gap: 12 },
     notifTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 3 },
@@ -118,7 +120,7 @@ export default function NotificationsScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Notifications</Text>
         {unreadCount > 0 && (

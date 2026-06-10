@@ -95,7 +95,7 @@ export default function UserManagementScreen({ route, navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color={COLORS.t2} />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Users</Text>
         <Text style={styles.count}>{total} total</Text>
@@ -106,7 +106,7 @@ export default function UserManagementScreen({ route, navigation }) {
         <Ionicons name="search" size={16} color={COLORS.t3} style={styles.searchIcon} />
         <TextInput
           placeholder="Search by name or email..."
-          placeholderTextColor="#444"
+          placeholderTextColor={COLORS.t3}
           value={search}
           onChangeText={onSearchChange}
           style={styles.searchInput}

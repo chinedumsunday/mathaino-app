@@ -227,8 +227,8 @@ export default function CertificateScreen({ route, navigation }) {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `I completed "${courseTitle}" on Mathaino! Certificate issued on ${issuedDate}.`,
-        title: 'My Mathaino Certificate',
+        message: `I completed "${courseTitle}" on iLearn! Certificate issued on ${issuedDate}.`,
+        title: 'My iLearn Certificate',
       });
     } catch (_) {}
   };
@@ -358,7 +358,7 @@ export default function CertificateScreen({ route, navigation }) {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back-circle" size={32} color="#555" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Certificate</Text>
           <View style={{ width: 32 }} />
@@ -380,7 +380,7 @@ export default function CertificateScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-circle" size={32} color="#555" />
+          <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Certificate</Text>
         <TouchableOpacity onPress={handleShare}>
@@ -441,7 +441,7 @@ export default function CertificateScreen({ route, navigation }) {
         {/* Verification row */}
         <View style={styles.verifyRow}>
           <Ionicons name="shield-checkmark" size={14} color="#4CAF50" />
-          <Text style={styles.verifyText}>Verified Completion • Mathaino</Text>
+          <Text style={styles.verifyText}>Verified Completion • iLearn</Text>
         </View>
 
         {/* Action buttons */}
