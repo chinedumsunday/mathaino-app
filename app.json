@@ -10,7 +10,9 @@
     "splash": {
       "backgroundColor": "#0B0C0F"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0B0C0F"
@@ -28,7 +30,10 @@
         "NSMicrophoneUsageDescription": "iLearn uses the microphone so you can speak in live classes."
       }
     },
-    "plugins": ["expo-image-picker"],
+    "plugins": [
+      "expo-image-picker",
+      "expo-font"
+    ],
     "extra": {
       "eas": {
         "projectId": "a45184e1-a365-45ac-9707-980c9a3fd6a0"
