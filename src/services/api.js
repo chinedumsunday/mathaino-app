@@ -23,6 +23,8 @@ export const loadToken = async () => {
 };
 
 // ═══ BASE REQUEST ═══
+const REQUEST_TIMEOUT_MS = 30 * 1000;
+
 const request = async (endpoint, options = {}) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -30,10 +32,14 @@ const request = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers,
+      signal: controller.signal,
     });
     const data = await res.json();
 
@@ -44,11 +50,16 @@ const request = async (endpoint, options = {}) => {
 
     return data;
   } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('The server took too long to respond. Please check your connection and try again.');
+    }
     // Network error
     if (err.message === 'Network request failed') {
       throw new Error('Cannot connect to server. Make sure the backend is running.');
     }
     throw err;
+  } finally {
+    clearTimeout(timer);
   }
 };
 
