@@ -11,7 +11,7 @@ export const FEATURES = {
   // Phase 3
   AI_CHAT: false,
   SOCIAL_FEED: false,
-  GOOGLE_LOGIN: false,
+  GOOGLE_LOGIN: true,
   // Phase 4
   LIVE_CLASSES: false,
   // Extras (delivered alongside phase 4)
