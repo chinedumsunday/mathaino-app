@@ -355,6 +355,18 @@ function extractYouTubeId(url) {
   return null;
 }
 
+// Native in-app playback via WebView; loaded lazily so web builds skip it
+let RNWebView = null;
+if (Platform.OS !== 'web') {
+  try { RNWebView = require('react-native-webview').WebView; } catch (_) {}
+}
+
+// Direct video files (mp4 etc.) get a minimal player page with native controls
+const directVideoHtml = (url) => `<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<style>html,body{margin:0;background:#000;height:100%}video{width:100%;height:100%;object-fit:contain}</style>
+</head><body><video src="${url}" controls playsinline></video></body></html>`;
+
 export function VideoPlayer({ url, title }) {
   const { colors: COLORS } = useTheme();
   const vpS = useMemo(() => StyleSheet.create({
@@ -368,20 +380,41 @@ export function VideoPlayer({ url, title }) {
 
   if (!url) return null;
   const ytId = extractYouTubeId(url);
+  const embedUrl = ytId ? `https://www.youtube.com/embed/${ytId}?playsinline=1&rel=0&modestbranding=1` : url;
 
-  if (Platform.OS === 'web' && ytId) {
+  // Web: embed in an iframe (YouTube embed page, or the raw URL — browsers play video files natively)
+  if (Platform.OS === 'web') {
     return (
       <View style={vpS.webWrap}>
         {React.createElement('iframe', {
-          src: `https://www.youtube.com/embed/${ytId}`,
+          src: embedUrl,
           style: { width: '100%', height: '100%', border: 'none' },
-          allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+          allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
           allowFullScreen: true,
         })}
       </View>
     );
   }
 
+  // Native: play inside the app
+  if (RNWebView) {
+    return (
+      <View style={vpS.webWrap}>
+        <RNWebView
+          source={ytId ? { uri: embedUrl } : { html: directVideoHtml(url) }}
+          originWhitelist={['*']}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          allowsFullscreenVideo
+          mediaPlaybackRequiresUserAction={false}
+          style={{ backgroundColor: '#000' }}
+        />
+      </View>
+    );
+  }
+
+  // Fallback if WebView is unavailable: open externally
   return (
     <TouchableOpacity onPress={() => Linking.openURL(url)} style={vpS.card} activeOpacity={0.8}>
       <View style={vpS.thumb}>
@@ -392,7 +425,7 @@ export function VideoPlayer({ url, title }) {
       </View>
       <View style={{ flex: 1 }}>
         {title ? <Text style={vpS.title} numberOfLines={2}>{title}</Text> : null}
-        <Text style={vpS.sub}>{ytId ? 'Opens in YouTube' : 'Tap to play video'}</Text>
+        <Text style={vpS.sub}>Tap to play video</Text>
       </View>
     </TouchableOpacity>
   );
