@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { FONT, TYPE, SPACING, RADIUS } from '../utils/theme';
@@ -18,6 +19,8 @@ WebBrowser.maybeCompleteAuthSession();
 const googleReadyForPlatform = () => {
   if (!FEATURES.GOOGLE_LOGIN || !isGoogleConfigured()) return false;
   if (Platform.OS === 'web') return true;
+  // Expo Go's package name doesn't match the OAuth registration — installed builds only
+  if (Constants.appOwnership === 'expo') return false;
   if (Platform.OS === 'android') return !!GOOGLE_ANDROID_CLIENT_ID;
   if (Platform.OS === 'ios') return !!GOOGLE_IOS_CLIENT_ID;
   return false;
