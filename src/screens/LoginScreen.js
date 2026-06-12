@@ -40,10 +40,18 @@ function GoogleSignInButton({ onToken, onError, loading }) {
     if (!response) return;
     if (response.type === 'success') {
       const idToken = response.authentication?.idToken || response.params?.id_token;
-      if (idToken) onToken(idToken);
-      else onError('Google did not return a sign-in token. Please try again.');
+      if (idToken) {
+        onToken(idToken);
+      } else {
+        const got = response.authentication ? Object.keys(response.authentication).join(', ') : 'nothing';
+        onError(`Google sign-in came back without an ID token (received: ${got}). Please try again.`);
+      }
     } else if (response.type === 'error') {
-      onError('Google sign-in failed. Please try again.');
+      onError(`Google sign-in failed: ${response.error?.message || response.params?.error_description || response.error || 'unknown error'}`);
+    } else if (response.type === 'dismiss' || response.type === 'cancel') {
+      onError('Google sign-in closed before finishing (the response never reached the app). Please try again.');
+    } else {
+      onError(`Google sign-in ended unexpectedly (${response.type}).`);
     }
   }, [response]);
 
