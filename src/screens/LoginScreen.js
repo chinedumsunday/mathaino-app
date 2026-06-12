@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { FONT, TYPE, SPACING, RADIUS } from '../utils/theme';
@@ -14,16 +13,19 @@ import { useTheme } from '../context/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const isExpoGo = Constants.appOwnership === 'expo';
+// The Google provider hook THROWS if the platform's client ID is missing,
+// so it can only ever run when this returns true for the current platform.
+const googleReadyForPlatform = () => {
+  if (!FEATURES.GOOGLE_LOGIN || !isGoogleConfigured()) return false;
+  if (Platform.OS === 'web') return true;
+  if (Platform.OS === 'android') return !!GOOGLE_ANDROID_CLIENT_ID;
+  if (Platform.OS === 'ios') return !!GOOGLE_IOS_CLIENT_ID;
+  return false;
+};
 
-export default function LoginScreen({ navigation }) {
+// Isolated so the useAuthRequest hook only executes when rendered
+function GoogleSignInButton({ onToken, onError, loading }) {
   const { colors: COLORS } = useTheme();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login, loginWithGoogle } = useAuth();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: GOOGLE_WEB_CLIENT_ID,
@@ -35,15 +37,43 @@ export default function LoginScreen({ navigation }) {
     if (!response) return;
     if (response.type === 'success') {
       const idToken = response.authentication?.idToken || response.params?.id_token;
-      if (idToken) {
-        handleGoogleToken(idToken);
-      } else {
-        setError('Google did not return a sign-in token. Please try again.');
-      }
+      if (idToken) onToken(idToken);
+      else onError('Google did not return a sign-in token. Please try again.');
     } else if (response.type === 'error') {
-      setError('Google sign-in failed. Please try again.');
+      onError('Google sign-in failed. Please try again.');
     }
   }, [response]);
+
+  return (
+    <Pressable
+      onPress={() => { haptic.light(); promptAsync(); }}
+      disabled={loading || !request}
+      style={({ pressed }) => ({
+        width: '100%', height: 56, borderRadius: RADIUS.lg,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
+        backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+        marginBottom: SPACING.md,
+        opacity: loading ? 0.5 : pressed ? 0.85 : 1,
+      })}
+    >
+      <Ionicons name="logo-google" size={20} color={COLORS.t1} />
+      <Text style={{ fontSize: TYPE.title, fontWeight: FONT.bold, color: COLORS.t1 }}>
+        {loading ? 'Signing in…' : 'Continue with Google'}
+      </Text>
+    </Pressable>
+  );
+}
+
+export default function LoginScreen({ navigation }) {
+  const { colors: COLORS } = useTheme();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login, loginWithGoogle } = useAuth();
+
+  const showGoogle = googleReadyForPlatform();
 
   const handleGoogleToken = async (idToken) => {
     setError('');
@@ -55,20 +85,6 @@ export default function LoginScreen({ navigation }) {
     } finally {
       setGoogleLoading(false);
     }
-  };
-
-  const handleGooglePress = () => {
-    setError('');
-    if (!isGoogleConfigured()) {
-      setError('Google sign-in is not configured yet. Add your Google client ID in src/config/auth.js.');
-      return;
-    }
-    if (isExpoGo && Platform.OS !== 'web') {
-      setError('Google sign-in works on the web version and installed builds — Expo Go does not support it. Use email & password here.');
-      return;
-    }
-    haptic.light();
-    promptAsync();
   };
 
   const handleLogin = async () => {
@@ -101,13 +117,6 @@ export default function LoginScreen({ navigation }) {
     divider: { flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.xl, gap: SPACING.lg },
     dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
     dividerText: { fontSize: TYPE.micro, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 1 },
-    googleBtn: {
-      width: '100%', height: 56, borderRadius: RADIUS.lg,
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
-      backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
-      marginBottom: SPACING.md,
-    },
-    googleText: { fontSize: TYPE.title, fontWeight: FONT.bold, color: COLORS.t1 },
   }), [COLORS]);
 
   return (
@@ -142,15 +151,8 @@ export default function LoginScreen({ navigation }) {
             <View style={styles.dividerLine} />
           </View>
 
-          {FEATURES.GOOGLE_LOGIN && (
-            <Pressable
-              onPress={handleGooglePress}
-              disabled={googleLoading}
-              style={({ pressed }) => ([styles.googleBtn, { opacity: googleLoading ? 0.5 : pressed ? 0.85 : 1 }])}
-            >
-              <Ionicons name="logo-google" size={20} color={COLORS.t1} />
-              <Text style={styles.googleText}>{googleLoading ? 'Signing in…' : 'Continue with Google'}</Text>
-            </Pressable>
+          {showGoogle && (
+            <GoogleSignInButton onToken={handleGoogleToken} onError={setError} loading={googleLoading} />
           )}
 
           <Button variant="secondary" onPress={() => navigation.navigate('Register')}>Create Account</Button>
