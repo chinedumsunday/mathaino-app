@@ -19,12 +19,15 @@ if (Platform.OS !== 'web') {
 
 const HEARTBEAT_MS = 10 * 1000;
 
-// Jitsi: skip the "open in app" interstitial and the prejoin page
-function buildMeetingUrl(link, displayName) {
-  if (!link) return link;
-  if (!link.includes('jit.si')) return link;
+// Tidy up a Jitsi/8x8 room URL: skip the app interstitial + prejoin page,
+// preset the display name. JaaS URLs already carry a ?jwt= query, so append
+// our tweaks to the hash (after #) to avoid clobbering it.
+function decorateMeetingUrl(url, displayName) {
+  if (!url) return url;
+  if (!(url.includes('jit.si') || url.includes('8x8.vc'))) return url;
   const name = encodeURIComponent(`"${displayName}"`);
-  return `${link}#config.disableDeepLinking=true&config.prejoinConfig.enabled=false&userInfo.displayName=${name}`;
+  const sep = url.includes('#') ? '&' : '#';
+  return `${url}${sep}config.disableDeepLinking=true&config.prejoinConfig.enabled=false&userInfo.displayName=${name}`;
 }
 
 export default function LiveClassroomScreen({ navigation, route }) {
@@ -34,6 +37,7 @@ export default function LiveClassroomScreen({ navigation, route }) {
   const sessionId = route.params?.sessionId || sessionParam?.id;
 
   const [session, setSession] = useState(sessionParam || null);
+  const [serverMeetingUrl, setServerMeetingUrl] = useState(null);
   const [joining, setJoining] = useState(true);
   const [error, setError] = useState(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -59,6 +63,7 @@ export default function LiveClassroomScreen({ navigation, route }) {
         if (!mounted) return;
         joinedRef.current = true;
         setSession(res.data.session);
+        if (res.data.meetingUrl) setServerMeetingUrl(res.data.meetingUrl);
         setError(null);
       } catch (e) {
         if (mounted) setError(e.message || 'Could not join this class.');
@@ -131,9 +136,14 @@ export default function LiveClassroomScreen({ navigation, route }) {
     leave();
   };
 
+  // Prefer the server's URL (JaaS room with a moderator JWT for lecturers);
+  // fall back to the stored link for external platforms / non-JaaS setups.
   const meetingUrl = useMemo(
-    () => buildMeetingUrl(session?.meetingLink, `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Student'),
-    [session?.meetingLink, user]
+    () => decorateMeetingUrl(
+      serverMeetingUrl || session?.meetingLink,
+      `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Student'
+    ),
+    [serverMeetingUrl, session?.meetingLink, user]
   );
 
   const styles = useMemo(() => StyleSheet.create({
