@@ -361,11 +361,31 @@ if (Platform.OS !== 'web') {
   try { RNWebView = require('react-native-webview').WebView; } catch (_) {}
 }
 
-// Direct video files (mp4 etc.) get a minimal player page with native controls
+// A direct video file (mp4/webm/m3u8/etc.) rather than a page to embed
+const isDirectVideoFile = (url) => /\.(mp4|m4v|webm|ogg|ogv|mov|m3u8|mpd)(\?|#|$)/i.test(url);
+
+// YouTube IFrame Player API page. Loaded with baseUrl https://www.youtube.com
+// so the embed sees a valid origin — without that, WebView playback fails with
+// "Video unavailable / Watch on YouTube" / a configuration error.
+const youtubeHtml = (videoId) => `<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}#player,iframe{width:100%;height:100%;border:0}</style>
+</head><body><div id="player"></div>
+<script>
+  var tag=document.createElement('script');
+  tag.src="https://www.youtube.com/iframe_api";
+  document.body.appendChild(tag);
+  function onYouTubeIframeAPIReady(){
+    new YT.Player('player',{videoId:'${videoId}',width:'100%',height:'100%',
+      playerVars:{playsinline:1,rel:0,modestbranding:1,fs:1}});
+  }
+</script></body></html>`;
+
+// Direct video files get a minimal player page with native controls
 const directVideoHtml = (url) => `<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <style>html,body{margin:0;background:#000;height:100%}video{width:100%;height:100%;object-fit:contain}</style>
-</head><body><video src="${url}" controls playsinline></video></body></html>`;
+</head><body><video src="${url}" controls playsinline autoplay></video></body></html>`;
 
 export function VideoPlayer({ url, title }) {
   const { colors: COLORS } = useTheme();
@@ -380,14 +400,16 @@ export function VideoPlayer({ url, title }) {
 
   if (!url) return null;
   const ytId = extractYouTubeId(url);
-  const embedUrl = ytId ? `https://www.youtube.com/embed/${ytId}?playsinline=1&rel=0&modestbranding=1` : url;
 
-  // Web: embed in an iframe (YouTube embed page, or the raw URL — browsers play video files natively)
+  // Web: native iframe (browser supplies a real origin so embeds just work)
   if (Platform.OS === 'web') {
+    const src = ytId
+      ? `https://www.youtube.com/embed/${ytId}?playsinline=1&rel=0&modestbranding=1`
+      : url;
     return (
       <View style={vpS.webWrap}>
         {React.createElement('iframe', {
-          src: embedUrl,
+          src,
           style: { width: '100%', height: '100%', border: 'none' },
           allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
           allowFullScreen: true,
@@ -396,18 +418,27 @@ export function VideoPlayer({ url, title }) {
     );
   }
 
-  // Native: play inside the app
+  // Native: play inside the app via WebView
   if (RNWebView) {
+    // YouTube → IFrame API page with youtube.com baseUrl
+    // Direct file → HTML5 <video>
+    // Anything else (Vimeo embed, etc.) → load the URL directly
+    const source = ytId
+      ? { html: youtubeHtml(ytId), baseUrl: 'https://www.youtube.com' }
+      : isDirectVideoFile(url)
+        ? { html: directVideoHtml(url), baseUrl: 'https://localhost' }
+        : { uri: url };
     return (
       <View style={vpS.webWrap}>
         <RNWebView
-          source={ytId ? { uri: embedUrl } : { html: directVideoHtml(url) }}
+          source={source}
           originWhitelist={['*']}
           javaScriptEnabled
           domStorageEnabled
           allowsInlineMediaPlayback
           allowsFullscreenVideo
           mediaPlaybackRequiresUserAction={false}
+          setSupportMultipleWindows={false}
           style={{ backgroundColor: '#000' }}
         />
       </View>
