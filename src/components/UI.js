@@ -347,10 +347,11 @@ export function ConfirmModal({ visible, title, message, onConfirm, onCancel, con
 }
 
 // ═══ VIDEO PLAYER ═══
-// Embeds YouTube on web (via iframe), links out on native.
+// Plays a lesson video from any pasted host — YouTube, Vimeo, Google Drive,
+// Dropbox, or a direct file link — inline, in-app.
 function extractYouTubeId(url) {
   if (!url) return null;
-  const ps = [/youtube\.com\/watch\?v=([^&\n?#]+)/, /youtube\.com\/embed\/([^?#]+)/, /youtu\.be\/([^?#]+)/];
+  const ps = [/youtube\.com\/watch\?v=([^&\n?#]+)/, /youtube\.com\/embed\/([^?#]+)/, /youtu\.be\/([^?#]+)/, /youtube\.com\/shorts\/([^?#/]+)/];
   for (const p of ps) { const m = url.match(p); if (m) return m[1]; }
   return null;
 }
@@ -364,22 +365,67 @@ if (Platform.OS !== 'web') {
 // A direct video file (mp4/webm/m3u8/etc.) rather than a page to embed
 const isDirectVideoFile = (url) => /\.(mp4|m4v|webm|ogg|ogv|mov|m3u8|mpd)(\?|#|$)/i.test(url);
 
-// YouTube IFrame Player API page. Loaded with baseUrl https://www.youtube.com
-// so the embed sees a valid origin — without that, WebView playback fails with
-// "Video unavailable / Watch on YouTube" / a configuration error.
-const youtubeHtml = (videoId) => `<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}#player,iframe{width:100%;height:100%;border:0}</style>
-</head><body><div id="player"></div>
-<script>
-  var tag=document.createElement('script');
-  tag.src="https://www.youtube.com/iframe_api";
-  document.body.appendChild(tag);
-  function onYouTubeIframeAPIReady(){
-    new YT.Player('player',{videoId:'${videoId}',width:'100%',height:'100%',
-      playerVars:{playsinline:1,rel:0,modestbranding:1,fs:1}});
+// Normalize any pasted link into something a player can actually load. Raw share
+// links (Drive "/view", Dropbox "?dl=0", a vimeo.com page) don't play as-is, so map
+// each known host to its embeddable/raw form. Returns one of:
+//   { embed, baseUrl } — an iframe player page (paired with a same-host baseUrl)
+//   { file }           — a direct video file for an HTML5 <video>
+//   { uri }            — load the URL directly (other embed-friendly pages)
+function resolveVideoSource(url) {
+  const u = (url || '').trim();
+  if (!u) return { uri: '' };
+
+  // YouTube → privacy-domain embed (see iframeHtml for the Error 153 rationale)
+  const yt = extractYouTubeId(u);
+  if (yt) return {
+    embed: `https://www.youtube-nocookie.com/embed/${yt}?playsinline=1&rel=0&modestbranding=1&fs=1`,
+    baseUrl: 'https://www.youtube.com',
+  };
+
+  // Vimeo → player embed. Handles vimeo.com/ID and private vimeo.com/ID/HASH
+  const vimeo = u.match(/vimeo\.com\/(?:video\/)?(\d+)(?:\/(\w+))?/);
+  if (vimeo) return {
+    embed: `https://player.vimeo.com/video/${vimeo[1]}${vimeo[2] ? `?h=${vimeo[2]}` : ''}`,
+    baseUrl: 'https://vimeo.com',
+  };
+
+  // Google Drive → /preview iframe (Drive's own player; the share "/view" won't play)
+  const drive = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)/);
+  if (drive) return {
+    embed: `https://drive.google.com/file/d/${drive[1]}/preview`,
+    baseUrl: 'https://drive.google.com',
+  };
+
+  // Dropbox share link → force the raw file, then play it as a direct video
+  if (/dropbox\.com\//.test(u)) {
+    const [path, query = ''] = u.split('?');
+    const params = query.split('&').filter(p => p && !/^(dl|raw)=/.test(p));
+    params.push('raw=1');
+    return { file: `${path}?${params.join('&')}` };
   }
-</script></body></html>`;
+
+  // A direct video file on any host
+  if (isDirectVideoFile(u)) return { file: u };
+
+  // Unknown host — load it directly (covers Loom, OneDrive embeds, custom players…)
+  return { uri: u };
+}
+
+// Full-bleed iframe page for an embeddable player URL. WebViews reach these hosts
+// without a normal browser Referer; YouTube rejects that with "Error 153 / video
+// player configuration error" and other hosts can behave similarly — so set an
+// explicit referrer policy, and the caller pairs this with a same-host baseUrl so
+// the origin/Referer the host receives is valid. Plain iframe (no JS IFrame API)
+// avoids the enablejsapi/origin handshake, another 153 trigger.
+const iframeHtml = (src) => `<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}iframe{width:100%;height:100%;border:0}</style>
+</head><body>
+<iframe src="${src}" referrerpolicy="strict-origin-when-cross-origin"
+  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+  allowfullscreen></iframe>
+</body></html>`;
 
 // Direct video files get a minimal player page with native controls
 const directVideoHtml = (url) => `<!DOCTYPE html><html><head>
@@ -399,35 +445,36 @@ export function VideoPlayer({ url, title }) {
   }), [COLORS]);
 
   if (!url) return null;
-  const ytId = extractYouTubeId(url);
+  const v = resolveVideoSource(url);
 
-  // Web: native iframe (browser supplies a real origin so embeds just work)
+  // Web: the browser gives iframes a real origin, so embeds just work
   if (Platform.OS === 'web') {
-    const src = ytId
-      ? `https://www.youtube.com/embed/${ytId}?playsinline=1&rel=0&modestbranding=1`
-      : url;
     return (
       <View style={vpS.webWrap}>
-        {React.createElement('iframe', {
-          src,
-          style: { width: '100%', height: '100%', border: 'none' },
-          allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
-          allowFullScreen: true,
-        })}
+        {v.file
+          ? React.createElement('video', {
+              src: v.file, controls: true, playsInline: true,
+              style: { width: '100%', height: '100%', background: '#000' },
+            })
+          : React.createElement('iframe', {
+              src: v.embed || v.uri,
+              style: { width: '100%', height: '100%', border: 'none' },
+              allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
+              allowFullScreen: true,
+            })}
       </View>
     );
   }
 
   // Native: play inside the app via WebView
   if (RNWebView) {
-    // YouTube → IFrame API page with youtube.com baseUrl
-    // Direct file → HTML5 <video>
-    // Anything else (Vimeo embed, etc.) → load the URL directly
-    const source = ytId
-      ? { html: youtubeHtml(ytId), baseUrl: 'https://www.youtube.com' }
-      : isDirectVideoFile(url)
-        ? { html: directVideoHtml(url), baseUrl: 'https://localhost' }
-        : { uri: url };
+    // embed → iframe player page (host-specific baseUrl) · file → HTML5 <video>
+    // · uri → load the URL directly
+    const source = v.embed
+      ? { html: iframeHtml(v.embed), baseUrl: v.baseUrl }
+      : v.file
+        ? { html: directVideoHtml(v.file), baseUrl: 'https://localhost' }
+        : { uri: v.uri };
     return (
       <View style={vpS.webWrap}>
         <RNWebView
