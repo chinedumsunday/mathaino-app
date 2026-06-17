@@ -896,7 +896,7 @@ export default function CourseDetailScreen({ route, navigation }) {
               <View style={styles.tipBox}>
                 <Ionicons name="information-circle-outline" size={15} color={COLORS.blue} />
                 <Text style={styles.tipText}>
-                  Upload your video to YouTube, Google Drive, or Dropbox, then paste the shareable link below. Students will tap "Watch Video" to open it.
+                  Paste a link from YouTube, Vimeo, Google Drive, or Dropbox — or a direct video file (.mp4). It plays right inside the app for students.
                 </Text>
               </View>
             )}
