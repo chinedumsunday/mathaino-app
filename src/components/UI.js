@@ -375,7 +375,8 @@ function resolveVideoSource(url) {
   const u = (url || '').trim();
   if (!u) return { uri: '' };
 
-  // YouTube → privacy-domain embed (see iframeHtml for the Error 153 rationale)
+  // YouTube → privacy-domain embed, loaded as a direct navigation (see the native
+  // branch for the Error 150/152/153 referrer rationale)
   const yt = extractYouTubeId(u);
   if (yt) return {
     embed: `https://www.youtube-nocookie.com/embed/${yt}?playsinline=1&rel=0&modestbranding=1&fs=1`,
@@ -410,22 +411,6 @@ function resolveVideoSource(url) {
   // Unknown host — load it directly (covers Loom, OneDrive embeds, custom players…)
   return { uri: u };
 }
-
-// Full-bleed iframe page for an embeddable player URL. WebViews reach these hosts
-// without a normal browser Referer; YouTube rejects that with "Error 153 / video
-// player configuration error" and other hosts can behave similarly — so set an
-// explicit referrer policy, and the caller pairs this with a same-host baseUrl so
-// the origin/Referer the host receives is valid. Plain iframe (no JS IFrame API)
-// avoids the enablejsapi/origin handshake, another 153 trigger.
-const iframeHtml = (src) => `<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="referrer" content="strict-origin-when-cross-origin">
-<style>html,body{margin:0;padding:0;background:#000;height:100%;overflow:hidden}iframe{width:100%;height:100%;border:0}</style>
-</head><body>
-<iframe src="${src}" referrerpolicy="strict-origin-when-cross-origin"
-  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-  allowfullscreen></iframe>
-</body></html>`;
 
 // Direct video files get a minimal player page with native controls
 const directVideoHtml = (url) => `<!DOCTYPE html><html><head>
@@ -468,10 +453,13 @@ export function VideoPlayer({ url, title }) {
 
   // Native: play inside the app via WebView
   if (RNWebView) {
-    // embed → iframe player page (host-specific baseUrl) · file → HTML5 <video>
-    // · uri → load the URL directly
+    // Load embeds as a real top-level navigation, NOT injected HTML. Android's
+    // loadDataWithBaseURL doesn't send a proper Referer, which YouTube rejects with
+    // "Error 150/152/153"; a direct navigation gives the page a genuine origin so
+    // the player loads instead of showing a "Watch on YouTube" link.
+    // embed → load player URL directly · file → HTML5 <video> page · uri → as-is
     const source = v.embed
-      ? { html: iframeHtml(v.embed), baseUrl: v.baseUrl }
+      ? { uri: v.embed }
       : v.file
         ? { html: directVideoHtml(v.file), baseUrl: 'https://localhost' }
         : { uri: v.uri };
