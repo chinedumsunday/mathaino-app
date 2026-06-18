@@ -362,6 +362,13 @@ if (Platform.OS !== 'web') {
   try { RNWebView = require('react-native-webview').WebView; } catch (_) {}
 }
 
+// YouTube uses the dedicated iframe-player library on native — raw WebView embeds
+// get the origin/referrer wrong and hit YouTube "Error 150/152/153". Native-only.
+let YoutubePlayer = null;
+if (Platform.OS !== 'web') {
+  try { YoutubePlayer = require('react-native-youtube-iframe').default; } catch (_) {}
+}
+
 // A direct video file (mp4/webm/m3u8/etc.) rather than a page to embed
 const isDirectVideoFile = (url) => /\.(mp4|m4v|webm|ogg|ogv|mov|m3u8|mpd)(\?|#|$)/i.test(url);
 
@@ -379,6 +386,7 @@ function resolveVideoSource(url) {
   // branch for the Error 150/152/153 referrer rationale)
   const yt = extractYouTubeId(u);
   if (yt) return {
+    youtubeId: yt,
     embed: `https://www.youtube-nocookie.com/embed/${yt}?playsinline=1&rel=0&modestbranding=1&fs=1`,
     baseUrl: 'https://www.youtube.com',
   };
@@ -420,8 +428,10 @@ const directVideoHtml = (url) => `<!DOCTYPE html><html><head>
 
 export function VideoPlayer({ url, title }) {
   const { colors: COLORS } = useTheme();
+  const [boxW, setBoxW] = useState(0); // measured player width → drives 16:9 height
   const vpS = useMemo(() => StyleSheet.create({
     webWrap: { width: '100%', aspectRatio: 16 / 9, borderRadius: RADIUS.md, overflow: 'hidden', backgroundColor: '#000', marginBottom: SPACING.lg },
+    ytWrap: { width: '100%', aspectRatio: 16 / 9, borderRadius: RADIUS.md, overflow: 'hidden', backgroundColor: '#000', marginBottom: SPACING.lg, alignItems: 'center', justifyContent: 'center' },
     card: { flexDirection: 'row', alignItems: 'center', gap: SPACING.lg, backgroundColor: COLORS.card, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.lg, marginBottom: SPACING.lg },
     thumb: { width: 72, height: 56, borderRadius: RADIUS.sm, backgroundColor: '#FF000015', alignItems: 'center', justifyContent: 'center' },
     playBtn: { position: 'absolute', bottom: 4, right: 4, width: 24, height: 24, borderRadius: RADIUS.sm - 2, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center' },
@@ -447,6 +457,25 @@ export function VideoPlayer({ url, title }) {
               allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
               allowFullScreen: true,
             })}
+      </View>
+    );
+  }
+
+  // Native YouTube → dedicated iframe-player library (gets the WebView origin/
+  // referrer right; raw embeds hit YouTube Error 150/152/153). Falls through to
+  // the WebView below if the library somehow isn't available.
+  if (v.youtubeId && YoutubePlayer) {
+    return (
+      <View style={vpS.ytWrap} onLayout={e => setBoxW(e.nativeEvent.layout.width)}>
+        {boxW > 0 && (
+          <YoutubePlayer
+            width={boxW}
+            height={Math.round((boxW * 9) / 16)}
+            videoId={v.youtubeId}
+            initialPlayerParams={{ rel: false, modestbranding: true }}
+            webViewProps={{ allowsInlineMediaPlayback: true, mediaPlaybackRequiresUserAction: false }}
+          />
+        )}
       </View>
     );
   }
