@@ -3,12 +3,14 @@
     "name": "iLearn",
     "slug": "mathaino-app",
     "scheme": "ilearn",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "newArchEnabled": false,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0B0C0F"
     },
     "assetBundlePatterns": [
@@ -16,6 +18,8 @@
     ],
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png",
         "backgroundColor": "#0B0C0F"
       },
       "package": "com.mathaino.app",
