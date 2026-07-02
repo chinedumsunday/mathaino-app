@@ -6,6 +6,7 @@ import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Avatar, Button, Card } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { apiMyEnrollments, apiMyCourses } from '../services/api';
 
 const ROLE_LABELS = {
   STUDENT: 'Student',
@@ -16,11 +17,28 @@ const ROLE_LABELS = {
 
 export default function ProfileScreen({ navigation }) {
   const { colors: COLORS } = useTheme();
-  const { user, logout, canManageUsers, canCreateCourses, isLecturer } = useAuth();
+  const { user, logout, canManageUsers, canCreateCourses, isLecturer, isStudent } = useAuth();
 
   // All hooks MUST come before any early return
   const [loggingOut, setLoggingOut] = React.useState(false);
   const [logoutVisible, setLogoutVisible] = React.useState(false);
+  const [courseCount, setCourseCount] = React.useState(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (isStudent) {
+          const res = await apiMyEnrollments();
+          if (!cancelled) setCourseCount((res.data.enrollments || []).filter(e => e.status !== 'PENDING').length);
+        } else if (isLecturer) {
+          const res = await apiMyCourses();
+          if (!cancelled) setCourseCount((res.data.courses || []).length);
+        }
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, [isStudent, isLecturer]);
 
   const ROLE_COLORS = useMemo(() => ({
     STUDENT: COLORS.blue,
@@ -88,14 +106,17 @@ export default function ProfileScreen({ navigation }) {
   info.push({ label: 'Phone', value: user.phone || 'N/A' });
   info.push({ label: 'Bio', value: user.bio || 'Not set' });
 
+  // Focus mode, leaderboard, and certificates are student features —
+  // other roles don't see menu entries they can't meaningfully use
   const menuItems = [
     { label: 'Notifications', icon: 'notifications-outline', go: () => navigation.navigate('Notifications') },
-    { label: 'Focus Mode', icon: 'timer-outline', go: () => navigation.navigate('Focus') },
-    { label: 'Leaderboard', icon: 'trophy-outline', go: () => navigation.navigate('Leaderboard') },
-    { label: 'My Certificates', icon: 'ribbon-outline', go: () => navigation.navigate('MyCertificates') },
+    isStudent && { label: 'Focus Mode', icon: 'timer-outline', go: () => navigation.navigate('Focus') },
+    isStudent && { label: 'Leaderboard', icon: 'trophy-outline', go: () => navigation.navigate('Leaderboard') },
+    isStudent && { label: 'My Certificates', icon: 'ribbon-outline', go: () => navigation.navigate('MyCertificates') },
+    isLecturer && { label: 'Submit Coursework to Admin', icon: 'document-attach-outline', go: () => navigation.navigate('LecturerCoursework') },
     { label: 'Settings', icon: 'settings-outline', go: () => navigation.navigate('Settings') },
     { label: 'Help & Support', icon: 'help-circle-outline', go: () => navigation.navigate('HelpSupport') },
-  ];
+  ].filter(Boolean);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -111,20 +132,26 @@ export default function ProfileScreen({ navigation }) {
             <Text style={[styles.roleText, { color: roleColor }]}>{roleLabel}</Text>
           </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={[styles.statNum, { color: COLORS.accent }]}>{(user.xp || 0).toLocaleString()}</Text>
-              <Text style={styles.statLabel}>XP</Text>
+          {(isStudent || isLecturer) && (
+            <View style={styles.statsRow}>
+              {isStudent && (
+                <>
+                  <View style={styles.stat}>
+                    <Text style={[styles.statNum, { color: COLORS.accent }]}>{(user.xp || 0).toLocaleString()}</Text>
+                    <Text style={styles.statLabel}>XP</Text>
+                  </View>
+                  <View style={styles.stat}>
+                    <Text style={[styles.statNum, { color: '#FF8C42' }]}>{user.streak || 0}</Text>
+                    <Text style={styles.statLabel}>Streak</Text>
+                  </View>
+                </>
+              )}
+              <View style={styles.stat}>
+                <Text style={[styles.statNum, { color: COLORS.teal }]}>{courseCount ?? '—'}</Text>
+                <Text style={styles.statLabel}>{isLecturer ? 'My Courses' : 'Courses'}</Text>
+              </View>
             </View>
-            <View style={styles.stat}>
-              <Text style={[styles.statNum, { color: '#FF8C42' }]}>{user.streak || 0}</Text>
-              <Text style={styles.statLabel}>Streak</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={[styles.statNum, { color: COLORS.teal }]}>4</Text>
-              <Text style={styles.statLabel}>Courses</Text>
-            </View>
-          </View>
+          )}
         </View>
 
         <View style={styles.content}>

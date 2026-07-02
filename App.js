@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { FocusProvider } from './src/context/FocusContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 // Surfaces render-time crashes instead of leaving a blank screen in
@@ -62,7 +63,9 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <AppContent />
+            <FocusProvider>
+              <AppContent />
+            </FocusProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

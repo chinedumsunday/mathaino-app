@@ -177,13 +177,19 @@ export const apiMyEnrollments = (params = {}) => {
   return request(`/enrollments/my${query ? '?' + query : ''}`);
 };
 
-export const apiUpdateProgress = (enrollmentId, progress) =>
-  request(`/enrollments/${enrollmentId}/progress`, { method: 'PATCH', body: JSON.stringify({ progress }) });
-
 export const apiCourseStudents = (courseId, params = {}) => {
   const query = new URLSearchParams(params).toString();
   return request(`/courses/${courseId}/students${query ? '?' + query : ''}`);
 };
+
+export const apiRegisterStudent = (courseId, userId) =>
+  request(`/courses/${courseId}/students`, { method: 'POST', body: JSON.stringify({ userId }) });
+
+export const apiUnregisterStudent = (courseId, userId, reason) =>
+  request(`/courses/${courseId}/students/${userId}`, { method: 'DELETE', body: JSON.stringify({ reason }) });
+
+export const apiUserEnrollments = (userId) =>
+  request(`/users/${userId}/enrollments`);
 
 // ═══ AI CHATBOT ═══
 export const apiChatbotSend = (message, history = []) =>
@@ -350,6 +356,25 @@ export const apiSessionAttendance = (id) =>
 // ═══ BROADCAST (admin/faculty) ═══
 export const apiBroadcastNotification = (title, message, audience = 'ALL') =>
   request('/notifications/broadcast', { method: 'POST', body: JSON.stringify({ title, message, audience }) });
+
+// ═══ COURSEWORK DOCUMENTS (lecturer → admin) ═══
+export const apiSubmitCoursework = (body) =>
+  request('/coursework', { method: 'POST', body: JSON.stringify(body) });
+
+export const apiMyCoursework = () =>
+  request('/coursework/mine');
+
+export const apiListCoursework = (params = {}) => {
+  const q = new URLSearchParams(params).toString();
+  return request(`/coursework${q ? '?' + q : ''}`);
+};
+
+export const apiReviewCoursework = (id, status, adminNote) =>
+  request(`/coursework/${id}/review`, { method: 'PATCH', body: JSON.stringify({ status, adminNote }) });
+
+// ═══ ACCOUNT ═══
+export const apiDeleteAccount = () =>
+  request('/users/me', { method: 'DELETE' });
 
 // ═══ HEALTH ═══
 export const apiHealth = () =>

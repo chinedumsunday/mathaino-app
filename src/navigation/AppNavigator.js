@@ -12,6 +12,7 @@ import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
 import { FEATURES } from '../config/features';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useFocus } from '../context/FocusContext';
 import { Card, ProgressBar, Chip, Avatar, Badge, StatusDot } from '../components/UI';
 import {
   apiMyEnrollments, apiMyCourses,
@@ -48,6 +49,8 @@ import ScheduleLiveClassScreen from '../screens/ScheduleLiveClassScreen';
 import LiveClassroomScreen from '../screens/LiveClassroomScreen';
 import LiveAttendanceScreen from '../screens/LiveAttendanceScreen';
 import BroadcastScreen from '../screens/BroadcastScreen';
+import LecturerCourseworkScreen from '../screens/LecturerCourseworkScreen';
+import CourseworkInboxScreen from '../screens/CourseworkInboxScreen';
 
 // ═══ COURSES TAB (role-aware) ═══
 function CoursesScreen({ navigation }) {
@@ -98,7 +101,7 @@ function CoursesScreen({ navigation }) {
   return (
     <SafeAreaView style={s.container} edges={['top']}>
       <View style={s.topBar}>
-        <Text style={s.topTitle}>{isStudent ? 'My Courses' : 'My Courses'}</Text>
+        <Text style={s.topTitle}>My Courses</Text>
         {isStudent
           ? <TouchableOpacity onPress={() => navigation.navigate('Browse')}>
               <Text style={{ color: COLORS.silver, fontSize: 12 }}>Browse →</Text>
@@ -153,6 +156,12 @@ function CoursesScreen({ navigation }) {
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: '700', color: COLORS.t1, marginBottom: 2 }}>{c?.title}</Text>
                   {isStudent ? (
+                    item.status === 'PENDING' ? (
+                      <>
+                        <Text style={{ fontSize: 11, color: COLORS.t3, marginBottom: 8 }}>{creatorName} • {c?._count?.modules || 0} modules</Text>
+                        <Badge label="Awaiting approval" color={COLORS.orange} />
+                      </>
+                    ) : (
                     <>
                       <Text style={{ fontSize: 11, color: COLORS.t3, marginBottom: 8 }}>{creatorName} • {c?._count?.modules || 0} modules</Text>
                       <ProgressBar value={item.progress || 0} />
@@ -161,6 +170,7 @@ function CoursesScreen({ navigation }) {
                         <Badge label={(item.progress || 0) >= 85 ? 'Almost done!' : (item.progress || 0) >= 50 ? 'Good progress' : 'Keep going!'} color={progressColor(item.progress || 0)} />
                       </View>
                     </>
+                    )
                   ) : (
                     <>
                       <Text style={{ fontSize: 11, color: COLORS.t3 }}>{c?.code} • {c?._count?.enrollments || 0} students • {c?._count?.modules || 0} modules</Text>
@@ -240,9 +250,41 @@ function MainTabs() {
 
 export const navigationRef = createNavigationContainerRef();
 
+// Floating pill shown anywhere in the app while a focus session is running —
+// students can study lessons with the timer following them around.
+function FocusMiniTimer({ currentRoute }) {
+  const { active, remaining } = useFocus();
+  const { colors: COLORS } = useTheme();
+
+  if (!active || currentRoute === 'Focus' || currentRoute === 'LiveClassroom') return null;
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+
+  return (
+    <TouchableOpacity
+      onPress={() => navigationRef.isReady() && navigationRef.navigate('Focus')}
+      activeOpacity={0.85}
+      style={{
+        position: 'absolute', bottom: 84, right: 16, zIndex: 50,
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.pink + '60',
+        borderRadius: 22, paddingVertical: 8, paddingHorizontal: 14,
+        shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+        elevation: 6,
+      }}
+    >
+      <Ionicons name="timer" size={15} color={COLORS.pink} />
+      <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.t1, fontVariant: ['tabular-nums'] }}>
+        {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
 export default function AppNavigator() {
   const { isLoggedIn } = useAuth();
   const { colors: COLORS } = useTheme();
+  const [currentRoute, setCurrentRoute] = React.useState(null);
 
   // Tapping a push notification routes to the right screen
   useEffect(() => {
@@ -252,6 +294,14 @@ export default function AppNavigator() {
       try {
         if (data.sessionId && FEATURES.LIVE_CLASSES) {
           navigationRef.navigate('LiveClassroom', { sessionId: data.sessionId });
+        } else if (data.type === 'coursework_submitted') {
+          navigationRef.navigate('CourseworkInbox');
+        } else if (data.type === 'coursework_reviewed') {
+          navigationRef.navigate('LecturerCoursework');
+        } else if (data.type === 'enrollment_request') {
+          navigationRef.navigate('PendingStudents');
+        } else if (data.courseId) {
+          navigationRef.navigate('CourseDetail', { courseId: data.courseId });
         } else {
           navigationRef.navigate('Notifications');
         }
@@ -273,7 +323,13 @@ export default function AppNavigator() {
   }), [COLORS]);
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navTheme}
+      onReady={() => setCurrentRoute(navigationRef.getCurrentRoute()?.name)}
+      onStateChange={() => setCurrentRoute(navigationRef.getCurrentRoute()?.name)}
+    >
+      {isLoggedIn && <FocusMiniTimer currentRoute={currentRoute} />}
       <Stack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
         {!isLoggedIn ? (
           <>
@@ -303,6 +359,8 @@ export default function AppNavigator() {
             <Stack.Screen name="CreateStudent" component={CreateStudentScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
             <Stack.Screen name="MyCertificates" component={MyCertificatesScreen} />
+            <Stack.Screen name="LecturerCoursework" component={LecturerCourseworkScreen} />
+            <Stack.Screen name="CourseworkInbox" component={CourseworkInboxScreen} />
             {FEATURES.AI_CHAT && <Stack.Screen name="AIChat" component={AIChatScreen} />}
             {FEATURES.SOCIAL_FEED && <Stack.Screen name="SocialFeed" component={SocialFeedScreen} />}
             {FEATURES.LIVE_CLASSES && (

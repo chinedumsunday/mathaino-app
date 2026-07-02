@@ -1,11 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { Card, Button, Toast, useToast } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import { apiDeleteAccount } from '../services/api';
+
+const SETTINGS_KEY = 'appSettings';
 
 function ConfirmModal({ visible, title, message, confirmLabel, danger, onConfirm, onCancel, colors }) {
   const modal = StyleSheet.create({
@@ -63,8 +67,33 @@ export default function SettingsScreen({ navigation }) {
   });
   const [clearVisible, setClearVisible] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const toggle = (key) => setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  // Settings persist across app launches
+  useEffect(() => {
+    AsyncStorage.getItem(SETTINGS_KEY)
+      .then(raw => { if (raw) setSettings(prev => ({ ...prev, ...JSON.parse(raw) })); })
+      .catch(() => {});
+  }, []);
+
+  const toggle = (key) => setSettings(prev => {
+    const next = { ...prev, [key]: !prev[key] };
+    AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next)).catch(() => {});
+    return next;
+  });
+
+  const handleDeleteAccount = async () => {
+    setDeleteVisible(false);
+    setDeleting(true);
+    try {
+      await apiDeleteAccount();
+      await logout();
+    } catch (e) {
+      showToast(e.message || 'Could not delete your account. Please try again.', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.bg },
@@ -126,7 +155,7 @@ export default function SettingsScreen({ navigation }) {
         confirmLabel="Delete Forever"
         danger
         colors={COLORS}
-        onConfirm={() => { setDeleteVisible(false); logout(); }}
+        onConfirm={handleDeleteAccount}
         onCancel={() => setDeleteVisible(false)}
       />
 
@@ -230,8 +259,8 @@ export default function SettingsScreen({ navigation }) {
 
         <View style={{ marginTop: 28 }}>
           <Text style={[styles.sectionTitle, { color: COLORS.red }]}>Danger Zone</Text>
-          <Button variant="danger" onPress={() => setDeleteVisible(true)}>
-            Delete Account
+          <Button variant="danger" onPress={() => setDeleteVisible(true)} disabled={deleting}>
+            {deleting ? 'Deleting Account…' : 'Delete Account'}
           </Button>
         </View>
 

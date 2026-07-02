@@ -1,72 +1,28 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
 import { Chip, Button } from '../components/UI';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useFocus } from '../context/FocusContext';
 
 export default function FocusScreen({ navigation }) {
   const { colors: COLORS } = useTheme();
+  const {
+    active, remaining, totalSeconds, pct, durationMin,
+    justCompleted, xpPerSession, start, stop, clearCompleted,
+  } = useFocus();
   const [duration, setDuration] = useState(25);
-  const [active, setActive] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm }
-  const [doneModal, setDoneModal] = useState(false);
-  const intervalRef = useRef(null);
-  const { addXp } = useAuth();
+  const [confirmStop, setConfirmStop] = useState(false);
 
-  const totalSeconds = duration * 60;
-  const remaining = totalSeconds - elapsed;
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  const pct = active ? (elapsed / totalSeconds) * 100 : 0;
-
-  useEffect(() => {
-    if (active) {
-      intervalRef.current = setInterval(() => {
-        setElapsed(prev => {
-          if (prev >= totalSeconds - 1) {
-            clearInterval(intervalRef.current);
-            setActive(false);
-            addXp(50);
-            setDoneModal(true);
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-      return () => clearInterval(intervalRef.current);
-    } else {
-      clearInterval(intervalRef.current);
-    }
-  }, [active, totalSeconds]);
-
-  const showConfirm = (title, message, onConfirm) => setConfirmModal({ title, message, onConfirm });
-  const dismissConfirm = () => setConfirmModal(null);
+  const mins = Math.floor((active ? remaining : duration * 60) / 60);
+  const secs = (active ? remaining : duration * 60) % 60;
 
   const handleToggle = () => {
-    if (active) {
-      showConfirm(
-        'Stop Focus Session?',
-        "You won't earn XP for this session if you stop now.",
-        () => { setActive(false); setElapsed(0); }
-      );
-    } else {
-      setElapsed(0);
-      setActive(true);
-    }
-  };
-
-  const handleBack = () => {
-    if (!active) { navigation.goBack(); return; }
-    showConfirm(
-      'Leave Focus?',
-      'Your current session progress will be lost.',
-      () => { setActive(false); setElapsed(0); navigation.goBack(); }
-    );
+    if (active) setConfirmStop(true);
+    else start(duration);
   };
 
   // SVG circle
@@ -74,7 +30,7 @@ export default function FocusScreen({ navigation }) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - pct / 100);
+  const strokeDashoffset = circumference * (1 - (active ? pct : 0) / 100);
 
   const styles = useMemo(() => StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.bg },
@@ -91,10 +47,12 @@ export default function FocusScreen({ navigation }) {
     tipsCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 16, marginTop: 24, width: '100%' },
     tipsTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
     tipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-    tipText: { fontSize: 12, color: COLORS.t2 },
-    encourageCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 20, marginTop: 24, alignItems: 'center' },
+    tipText: { fontSize: 12, color: COLORS.t2, flex: 1 },
+    studyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingVertical: 12, paddingHorizontal: 20, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.teal + '50', backgroundColor: COLORS.teal + '12' },
+    studyBtnText: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.teal },
+    encourageCard: { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 20, marginTop: 24, alignItems: 'center', width: '100%' },
     encourageEmoji: { fontSize: 32, marginBottom: 8 },
-    encourageText: { fontSize: 13, color: COLORS.t2, textAlign: 'center' },
+    encourageText: { fontSize: 13, color: COLORS.t2, textAlign: 'center', lineHeight: 20 },
   }), [COLORS]);
 
   const modal = useMemo(() => StyleSheet.create({
@@ -115,33 +73,31 @@ export default function FocusScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Focus complete modal */}
-      <Modal visible={doneModal} transparent animationType="fade" onRequestClose={() => { setDoneModal(false); setElapsed(0); }}>
+      <Modal visible={justCompleted} transparent animationType="fade" onRequestClose={clearCompleted}>
         <View style={modal.overlay}>
           <View style={modal.box}>
             <Text style={{ fontSize: 48, textAlign: 'center', marginBottom: 8 }}>🎉</Text>
             <Text style={modal.title}>Focus Complete!</Text>
-            <Text style={modal.message}>You earned 50 XP! Great focus session. Keep up the momentum!</Text>
-            <TouchableOpacity
-              onPress={() => { setDoneModal(false); setElapsed(0); }}
-              style={[modal.btn, modal.primaryBtn, { marginTop: 8 }]}
-            >
+            <Text style={modal.message}>You earned {xpPerSession} XP! Great focus session. Keep up the momentum!</Text>
+            <TouchableOpacity onPress={clearCompleted} style={[modal.btn, modal.primaryBtn, { marginTop: 8 }]}>
               <Text style={modal.primaryText}>Awesome!</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <Modal visible={!!confirmModal} transparent animationType="fade" onRequestClose={dismissConfirm}>
+      {/* Stop confirmation */}
+      <Modal visible={confirmStop} transparent animationType="fade" onRequestClose={() => setConfirmStop(false)}>
         <View style={modal.overlay}>
           <View style={modal.box}>
-            <Text style={modal.title}>{confirmModal?.title}</Text>
-            <Text style={modal.message}>{confirmModal?.message}</Text>
+            <Text style={modal.title}>Stop Focus Session?</Text>
+            <Text style={modal.message}>You won't earn XP for this session if you stop now.</Text>
             <View style={modal.actions}>
-              <TouchableOpacity onPress={dismissConfirm} style={[modal.btn, modal.cancelBtn]}>
+              <TouchableOpacity onPress={() => setConfirmStop(false)} style={[modal.btn, modal.cancelBtn]}>
                 <Text style={modal.cancelText}>Keep Going</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => { dismissConfirm(); confirmModal?.onConfirm?.(); }}
+                onPress={() => { setConfirmStop(false); stop(); }}
                 style={[modal.btn, modal.dangerBtn]}
               >
                 <Text style={modal.dangerText}>Stop</Text>
@@ -152,7 +108,7 @@ export default function FocusScreen({ navigation }) {
       </Modal>
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
         <Text style={styles.title}>Focus Mode</Text>
@@ -203,19 +159,19 @@ export default function FocusScreen({ navigation }) {
         <View style={styles.xpInfo}>
           <Ionicons name="star" size={16} color={COLORS.accent} />
           <Text style={styles.xpText}>
-            {active ? '+50 XP on completion' : 'Earn 50 XP per completed session'}
+            {active ? `+${xpPerSession} XP on completion` : `Earn ${xpPerSession} XP per completed session`}
           </Text>
         </View>
 
         {/* Tips */}
         {!active && (
           <View style={styles.tipsCard}>
-            <Text style={styles.tipsTitle}>Focus Tips</Text>
+            <Text style={styles.tipsTitle}>How Focus Mode works</Text>
             {[
-              'Put your phone on silent mode',
-              'Close all unnecessary tabs',
-              'Have water nearby',
-              'Take a break between sessions',
+              'The timer keeps counting while you study anywhere in the app',
+              'Open a lesson, take a quiz, or read course notes — stay in the zone',
+              'If you leave the app, we\'ll send a reminder to come back',
+              'Finish the full session to earn your XP',
             ].map((tip, i) => (
               <View key={i} style={styles.tipRow}>
                 <Ionicons name="checkmark-circle" size={14} color={COLORS.teal} />
@@ -227,12 +183,20 @@ export default function FocusScreen({ navigation }) {
 
         {active && (
           <View style={styles.encourageCard}>
-            <Text style={styles.encourageEmoji}>💪</Text>
-            <Text style={styles.encourageText}>You're doing great! Stay in the zone.</Text>
+            <Text style={styles.encourageEmoji}>📚</Text>
+            <Text style={styles.encourageText}>
+              You're in the zone! Open your courses and study — the timer follows you around the app.
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Main', { screen: 'CoursesTab' })}
+              style={styles.studyBtn}
+            >
+              <Ionicons name="book" size={15} color={COLORS.teal} />
+              <Text style={styles.studyBtnText}>Study My Courses</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
     </SafeAreaView>
   );
 }
-

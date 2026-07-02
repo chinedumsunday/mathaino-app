@@ -14,6 +14,7 @@ export default function BrowseScreen({ navigation }) {
   const { colors: COLORS } = useTheme();
   const [courses, setCourses] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState(new Set());
+  const [pendingIds, setPendingIds] = useState(new Set());
   const [enrolling, setEnrolling] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,10 +38,13 @@ export default function BrowseScreen({ navigation }) {
       }
 
       if (enrollmentsRes.status === 'fulfilled') {
-        const ids = new Set(
-          (enrollmentsRes.value.data.enrollments || []).map(e => e.courseId || e.course?.id)
-        );
-        setEnrolledIds(ids);
+        const enrollments = enrollmentsRes.value.data.enrollments || [];
+        setEnrolledIds(new Set(
+          enrollments.filter(e => e.status !== 'PENDING').map(e => e.courseId || e.course?.id)
+        ));
+        setPendingIds(new Set(
+          enrollments.filter(e => e.status === 'PENDING').map(e => e.courseId || e.course?.id)
+        ));
       }
     } catch (e) {
       setError('Could not connect to server.');
@@ -55,7 +59,7 @@ export default function BrowseScreen({ navigation }) {
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
 
   const handleEnrollPress = (course) => {
-    if (enrolledIds.has(course.id)) {
+    if (enrolledIds.has(course.id) || pendingIds.has(course.id)) {
       navigation.navigate('CourseDetail', { courseId: course.id });
       return;
     }
@@ -69,11 +73,10 @@ export default function BrowseScreen({ navigation }) {
     setEnrolling(course.id);
     try {
       await apiEnroll(course.id);
-      setEnrolledIds(prev => new Set([...prev, course.id]));
-      showToast(`Enrolled in ${course.title}!`, 'success');
-      setTimeout(() => navigation.navigate('CourseDetail', { courseId: course.id }), 1000);
+      setPendingIds(prev => new Set([...prev, course.id]));
+      showToast('Request sent! You\'ll be notified once approved.', 'success');
     } catch (e) {
-      showToast(e.message || 'Could not enroll. Please try again.', 'error');
+      showToast(e.message || 'Could not send the request. Please try again.', 'error');
     } finally {
       setEnrolling(null);
     }
@@ -153,15 +156,15 @@ export default function BrowseScreen({ navigation }) {
         <View style={modal.overlay}>
           <View style={modal.box}>
             <Ionicons name="school-outline" size={32} color={COLORS.accent} style={{ marginBottom: 12 }} />
-            <Text style={modal.title}>Enroll in course?</Text>
+            <Text style={modal.title}>Request enrollment?</Text>
             <Text style={modal.courseName}>{enrollTarget?.title}</Text>
-            <Text style={modal.message}>You can start learning immediately after enrolling. This course is free.</Text>
+            <Text style={modal.message}>Your request goes to the lecturer for approval — you'll get a notification once it's reviewed. This course is free.</Text>
             <View style={modal.actions}>
               <TouchableOpacity onPress={() => setEnrollTarget(null)} style={[modal.btn, modal.cancelBtn]}>
                 <Text style={modal.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={confirmEnroll} style={[modal.btn, modal.enrollBtn]}>
-                <Text style={modal.enrollText}>Enroll Now</Text>
+                <Text style={modal.enrollText}>Send Request</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -206,6 +209,7 @@ export default function BrowseScreen({ navigation }) {
 
           {filtered.map(course => {
             const isEnrolled = enrolledIds.has(course.id);
+            const isPending = pendingIds.has(course.id);
             const isEnrollingThis = enrolling === course.id;
             const creatorName = course.creator
               ? `${course.creator.firstName} ${course.creator.lastName}`.trim()
@@ -220,6 +224,7 @@ export default function BrowseScreen({ navigation }) {
                     <Text style={styles.courseSub}>{creatorName} • {course.code}</Text>
                   </View>
                   {isEnrolled && <Badge label="Enrolled" color={COLORS.teal} />}
+                  {isPending && <Badge label="Pending" color={COLORS.orange} />}
                 </View>
 
                 {course.description && (
@@ -235,22 +240,17 @@ export default function BrowseScreen({ navigation }) {
                       </Text>{' '}Modules
                     </Text>
                   </View>
-                  <View style={styles.statItem}>
-                    <Ionicons name="people-outline" size={14} color={COLORS.accent} />
-                    <Text style={styles.statText}>
-                      <Text style={{ color: COLORS.accent, fontWeight: FONT.bold }}>
-                        {course._count?.enrollments || 0}
-                      </Text>{' '}Students
-                    </Text>
-                  </View>
                 </View>
 
                 <Button
                   onPress={() => handleEnrollPress(course)}
-                  variant={isEnrolled ? 'secondary' : 'primary'}
+                  variant={isEnrolled || isPending ? 'secondary' : 'primary'}
                   disabled={isEnrollingThis}
                 >
-                  {isEnrollingThis ? 'Enrolling...' : isEnrolled ? 'Continue Learning →' : 'Enroll Now — Free'}
+                  {isEnrollingThis ? 'Sending Request...'
+                    : isEnrolled ? 'Continue Learning →'
+                    : isPending ? 'Awaiting Approval →'
+                    : 'Request Enrollment — Free'}
                 </Button>
               </Card>
             );

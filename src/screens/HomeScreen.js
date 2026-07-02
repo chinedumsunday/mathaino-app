@@ -97,7 +97,8 @@ function StudentHome({ navigation, user }) {
         apiGetLeaderboard({ limit: 200 }),
       ]);
       if (enrollRes.status === 'fulfilled') {
-        setEnrollments(enrollRes.value.data.enrollments || []);
+        // Pending requests aren't studyable yet — keep "Continue Learning" to real enrollments
+        setEnrollments((enrollRes.value.data.enrollments || []).filter(e => e.status !== 'PENDING'));
         setError(null);
       } else {
         setError('Could not load courses. Pull down to retry.');
@@ -405,7 +406,7 @@ function LecturerHome({ navigation, user }) {
           <View style={styles.quickGrid}>
             {[
               { icon: 'create-outline', label: 'New Course', color: COLORS.teal, go: () => navigation.navigate('CourseBuilder') },
-              { icon: 'people-outline', label: 'Students', color: COLORS.blue, go: () => navigation.navigate('PendingStudents') },
+              { icon: 'document-attach-outline', label: 'Submit Doc', color: COLORS.blue, go: () => navigation.navigate('LecturerCoursework') },
               FEATURES.LIVE_CLASSES && { icon: 'radio-outline', label: 'Live Class', color: COLORS.red, go: () => navigation.navigate('ScheduleLiveClass') },
               { icon: 'person-add-outline', label: 'Approvals', color: COLORS.orange, go: () => navigation.navigate('PendingStudents') },
             ].filter(Boolean).map((a, i) => (
@@ -538,6 +539,8 @@ function FacultyHome({ navigation, user }) {
           <Text style={styles.sectionTitle}>Manage</Text>
           {[
             FEATURES.ANNOUNCEMENTS && { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify all users about updates & news', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
+            { icon: 'file-tray-full-outline', label: 'Coursework Inbox', desc: 'Documents submitted by lecturers', color: COLORS.silver, go: () => navigation.navigate('CourseworkInbox') },
+            { icon: 'school-outline', label: 'Enrollment Requests', desc: 'Approve or reject pending enrollments', color: COLORS.green, go: () => navigation.navigate('PendingStudents') },
             { icon: 'person-add-outline', label: 'Create Lecturer Account', desc: 'Add a new lecturer to the platform', color: COLORS.teal, go: () => navigation.navigate('CreateLecturer') },
             { icon: 'people-outline', label: 'User Management', desc: 'View, approve & manage all users', color: COLORS.blue, go: () => navigation.navigate('UserManagement') },
             { icon: 'book-outline', label: 'All Courses', desc: 'View & manage department courses', color: COLORS.orange, go: () => navigation.navigate('Browse') },
@@ -655,6 +658,8 @@ function AdminHome({ navigation, user }) {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           {[
             FEATURES.ANNOUNCEMENTS && { icon: 'megaphone-outline', label: 'Send Announcement', desc: 'Notify everyone about app updates', color: COLORS.accent, go: () => navigation.navigate('Broadcast') },
+            { icon: 'file-tray-full-outline', label: 'Coursework Inbox', desc: 'Documents submitted by lecturers', color: COLORS.silver, go: () => navigation.navigate('CourseworkInbox') },
+            { icon: 'school-outline', label: 'Enrollment Requests', desc: 'Approve or reject pending enrollments', color: COLORS.green, go: () => navigation.navigate('PendingStudents') },
             { icon: 'people-outline', label: 'Manage Users', desc: 'Roles, status & permissions', color: COLORS.blue, go: () => navigation.navigate('UserManagement') },
             { icon: 'person-add-outline', label: 'Create Lecturer', desc: 'Add a new lecturer account', color: COLORS.teal, go: () => navigation.navigate('CreateLecturer') },
             { icon: 'book-outline', label: 'Course Builder', desc: 'Create & manage courses', color: COLORS.orange, go: () => navigation.navigate('CourseBuilder') },

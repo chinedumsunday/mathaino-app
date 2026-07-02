@@ -14,7 +14,8 @@ import {
   apiGetCourse, apiEnroll, apiCreateModule, apiCreateContent,
   apiGetCertificate, apiListDiscussions, apiCreateDiscussion,
   apiDeleteDiscussion, apiCreateReply, apiDeleteReply,
-  apiTogglePublish,
+  apiTogglePublish, apiCourseStudents, apiUnregisterStudent,
+  apiApproveEnrollment,
 } from '../services/api';
 
 const CONTENT_TYPES = ['VIDEO', 'DOCUMENT', 'QUIZ', 'ASSIGNMENT'];
@@ -50,6 +51,13 @@ export default function CourseDetailScreen({ route, navigation }) {
 
   const [deleteDiscId, setDeleteDiscId] = useState(null);
   const { toast, showToast } = useToast();
+
+  // Students tab (managers only)
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState(null); // enrollment row
+  const [removeReason, setRemoveReason] = useState('');
+  const [removing, setRemoving] = useState(false);
 
   const CONTENT_ICON = useMemo(() => ({
     VIDEO:        { name: 'play-circle',      color: COLORS.teal },
@@ -158,6 +166,11 @@ export default function CourseDetailScreen({ route, navigation }) {
     radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.accent },
     addQuestionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, justifyContent: 'center', borderWidth: 1, borderColor: COLORS.accent + '40', borderRadius: RADIUS.md, borderStyle: 'dashed' },
     addQuestionBtnText: { fontSize: 12, color: COLORS.accent, fontWeight: FONT.semibold },
+    // Students tab
+    studentRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.lg, padding: 12, marginBottom: 8 },
+    studentName: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    studentMeta: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    studentIconBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: COLORS.red + '40', alignItems: 'center', justifyContent: 'center' },
     // Confirm dialog
     confirmOverlay: { flex: 1, backgroundColor: '#000000AA', alignItems: 'center', justifyContent: 'center', padding: 32 },
     confirmBox: { width: '100%', backgroundColor: COLORS.card, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, padding: 24 },
@@ -229,12 +242,60 @@ export default function CourseDetailScreen({ route, navigation }) {
     setEnrolling(true);
     try {
       await apiEnroll(course.id);
-      setEnrollment({ status: 'ENROLLED', progress: 0 });
-      showToast(`Enrolled in ${course.title}! Start learning.`, 'success');
+      setEnrollment({ status: 'PENDING', progress: 0 });
+      showToast('Request sent! You\'ll be notified once the lecturer approves.', 'success');
     } catch (e) {
-      showToast(e.message || 'Could not enroll. Please try again.', 'error');
+      showToast(e.message || 'Could not send the request. Please try again.', 'error');
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  // ── Students tab (managers) ──
+  const loadStudents = useCallback(async () => {
+    const id = courseId || preloaded?.id;
+    if (!id) return;
+    setStudentsLoading(true);
+    try {
+      const res = await apiCourseStudents(id, { limit: 100 });
+      setStudents(res.data?.enrollments || []);
+    } catch (_) {}
+    finally { setStudentsLoading(false); }
+  }, [courseId, preloaded?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'Students' && canManage) loadStudents();
+  }, [activeTab, canManage, loadStudents]);
+
+  const confirmRemoveStudent = async () => {
+    const target = removeTarget;
+    if (!target) return;
+    setRemoving(true);
+    try {
+      await apiUnregisterStudent(course.id, target.user.id, removeReason.trim() || undefined);
+      setStudents(prev => prev.filter(s => s.id !== target.id));
+      showToast(`${target.user.firstName} was unregistered from this course.`, 'success');
+      setRemoveTarget(null);
+      setRemoveReason('');
+    } catch (e) {
+      showToast(e.message || 'Could not unregister the student.', 'error');
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  const handleApproveStudent = async (enrollmentRow, action) => {
+    try {
+      await apiApproveEnrollment(enrollmentRow.id, action);
+      if (action === 'approve') {
+        setStudents(prev => prev.map(s => (s.id === enrollmentRow.id ? { ...s, status: 'ENROLLED' } : s)));
+        showToast(`${enrollmentRow.user.firstName} approved.`, 'success');
+      } else {
+        setStudents(prev => prev.filter(s => s.id !== enrollmentRow.id));
+        showToast('Request declined.', 'info');
+      }
+    } catch (e) {
+      showToast(e.message || 'Action failed.', 'error');
     }
   };
 
@@ -396,23 +457,26 @@ export default function CourseDetailScreen({ route, navigation }) {
 
   const contentIcon = (type) => CONTENT_ICON[type] || { name: 'document-text', color: COLORS.blue };
 
-  // canManage must come first — modules display depends on it
+  // canManage must come first — modules display depends on it.
+  // Lecturers only manage courses they created; faculty/admin manage all.
   const canManage =
     (user && course?.creator?.id && user.id === course.creator.id) ||
     user?.role === 'FACULTY' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'LECTURER';  // lecturers manage their own courses (checked via creator.id above, but role also grants access to manage any course they created)
+    user?.role === 'SUPER_ADMIN';
 
   const realModules  = course?.modules || [];
-  // Managers always see real (possibly empty) modules so they get the management UI
-  // Students see real modules OR mock fallback if API data hasn't loaded
   const modules      = realModules;
-  const isEnrolled   = enrollment && enrollment.status !== 'DROPPED';
+  const isPending    = enrollment?.status === 'PENDING';
+  const isEnrolled   = ['ENROLLED', 'COMPLETED'].includes(enrollment?.status);
   const isCompleted  = enrollment?.status === 'COMPLETED' || (enrollment?.progress || 0) >= 100;
   const progress    = enrollment?.progress || course?.progress || 0;
   const creatorName = course?.creator
     ? `${course.creator.firstName} ${course.creator.lastName}`.trim()
     : (preloaded?.lecturer || 'Instructor');
+  const totalLessons = modules.reduce((n, m) => n + (m.contents?.length || 0), 0);
+  const TABS = canManage
+    ? ['Modules', 'Discussion', 'Description', 'Students']
+    : ['Modules', 'Discussion', 'Description'];
 
   if (loading) {
     return (
@@ -459,15 +523,19 @@ export default function CourseDetailScreen({ route, navigation }) {
             </View>
             {isEnrolled
               ? <Badge label="Enrolled" color={COLORS.green} />
-              : <Badge label="Not Enrolled" color={COLORS.t3} />
+              : isPending
+                ? <Badge label="Pending Approval" color={COLORS.orange} />
+                : <Badge label="Not Enrolled" color={COLORS.t3} />
             }
           </View>
 
-          {/* Stats */}
+          {/* Stats — enrollment numbers are lecturer/admin information only */}
           <View style={styles.statsCard}>
             {[
               { n: course._count?.modules ?? course.modules?.length ?? 0, l: 'Modules', c: COLORS.accent },
-              { n: course._count?.enrollments ?? '—', l: 'Students', c: COLORS.teal },
+              canManage
+                ? { n: course._count?.enrollments ?? '—', l: 'Students', c: COLORS.teal }
+                : { n: totalLessons, l: 'Lessons', c: COLORS.teal },
               { n: isEnrolled ? `${Math.round(progress)}%` : '—', l: 'Progress', c: COLORS.blue },
             ].map((stat, i) => (
               <View key={i} style={[styles.statItem, i < 2 && styles.statBorder]}>
@@ -530,15 +598,15 @@ export default function CourseDetailScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
 
-          {/* Tabs */}
+          {/* Tabs — Students is management-only */}
           <View style={styles.tabRow}>
-            {['Modules', 'Discussion', 'About', 'Students'].map(t => (
+            {TABS.map(t => (
               <TouchableOpacity
                 key={t}
                 onPress={() => setActiveTab(t)}
                 style={[styles.tab, activeTab === t && styles.tabActive]}
               >
-                <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>{t}</Text>
+                <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]} numberOfLines={1}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -575,7 +643,12 @@ export default function CourseDetailScreen({ route, navigation }) {
                               key={item.id}
                               onPress={() => isEnrolled || canManage
                                 ? navigation.navigate('Lesson', { lesson: item, courseTitle: course.title })
-                                : showToast('Enroll in this course to access lessons.', 'info')
+                                : showToast(
+                                    isPending
+                                      ? 'Your enrollment is awaiting approval — lessons unlock once approved.'
+                                      : 'Enroll in this course to access lessons.',
+                                    'info'
+                                  )
                               }
                               style={styles.lessonRow}
                             >
@@ -734,13 +807,16 @@ export default function CourseDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* ── About Tab ── */}
-          {activeTab === 'About' && (
+          {/* ── Course Description Tab ── */}
+          {activeTab === 'Description' && (
             <View style={{ padding: 4 }}>
-              <Text style={{ fontSize: 13, color: COLORS.t2, lineHeight: 22, marginBottom: 16 }}>
-                {course.description || 'No description available.'}
+              <Text style={{ fontSize: 14, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 8 }}>
+                Course Description
               </Text>
-              {!isEnrolled && !canManage && (
+              <Text style={{ fontSize: 13, color: COLORS.t2, lineHeight: 22, marginBottom: 16 }}>
+                {course.description || 'No course description has been added yet.'}
+              </Text>
+              {!isEnrolled && !isPending && !canManage && (
                 <Card style={{ backgroundColor: COLORS.accent + '10', borderColor: COLORS.accent + '30' }}>
                   <Text style={{ fontSize: 13, color: COLORS.accent, fontWeight: FONT.semibold, marginBottom: 4 }}>
                     Enroll to unlock all content
@@ -763,15 +839,69 @@ export default function CourseDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* ── Students Tab ── */}
-          {activeTab === 'Students' && (
+          {/* ── Students Tab (managers only) ── */}
+          {activeTab === 'Students' && canManage && (
             <View style={{ padding: 4 }}>
-              <Text style={{ fontSize: 13, color: COLORS.t3, marginBottom: 16 }}>
-                {course._count?.enrollments ?? '—'} students enrolled
-              </Text>
-              <Text style={{ fontSize: 12, color: COLORS.t3, textAlign: 'center', paddingVertical: 20 }}>
-                Student list available from the course management panel.
-              </Text>
+              {studentsLoading ? (
+                <ActivityIndicator color={COLORS.accent} style={{ marginVertical: 24 }} />
+              ) : students.length === 0 ? (
+                <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+                  <Ionicons name="people-outline" size={36} color={COLORS.t3} />
+                  <Text style={{ color: COLORS.t3, marginTop: 12, fontSize: 13, textAlign: 'center' }}>
+                    No students registered yet.{'\n'}Approved enrollments will appear here.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 12, color: COLORS.t3, marginBottom: 12 }}>
+                    {students.length} student{students.length === 1 ? '' : 's'} registered
+                  </Text>
+                  {students.map(en => {
+                    const sName = `${en.user?.firstName || ''} ${en.user?.lastName || ''}`.trim();
+                    const matric = en.user?.studentProfile?.matricNumber;
+                    const pendingRow = en.status === 'PENDING';
+                    return (
+                      <View key={en.id} style={styles.studentRow}>
+                        <Avatar size={38} name={sName} url={en.user?.avatarUrl} color={COLORS.blue} />
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                          <Text style={styles.studentName}>{sName}</Text>
+                          <Text style={styles.studentMeta}>
+                            {matric ? `${matric} • ` : ''}{en.user?.email}
+                          </Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                            <Badge
+                              label={pendingRow ? 'Pending' : en.status === 'COMPLETED' ? 'Completed' : 'Enrolled'}
+                              color={pendingRow ? COLORS.orange : en.status === 'COMPLETED' ? COLORS.teal : COLORS.green}
+                            />
+                            {!pendingRow && (
+                              <Text style={{ fontSize: 10, color: progressColor(en.progress || 0), fontWeight: FONT.bold }}>
+                                {Math.round(en.progress || 0)}%
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                        {pendingRow ? (
+                          <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <TouchableOpacity onPress={() => handleApproveStudent(en, 'reject')} style={styles.studentIconBtn}>
+                              <Ionicons name="close" size={17} color={COLORS.red} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => handleApproveStudent(en, 'approve')} style={[styles.studentIconBtn, { borderColor: COLORS.green + '50' }]}>
+                              <Ionicons name="checkmark" size={17} color={COLORS.green} />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            onPress={() => { setRemoveTarget(en); setRemoveReason(''); }}
+                            style={styles.studentIconBtn}
+                          >
+                            <Ionicons name="person-remove-outline" size={16} color={COLORS.red} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </>
+              )}
             </View>
           )}
         </View>
@@ -803,9 +933,13 @@ export default function CourseDetailScreen({ route, navigation }) {
           }}>
             Continue Learning
           </Button>
+        ) : isPending ? (
+          <Button variant="secondary" disabled>
+            ⏳ Awaiting Lecturer Approval
+          </Button>
         ) : (
           <Button onPress={handleEnroll} disabled={enrolling}>
-            {enrolling ? 'Enrolling...' : 'Enroll Now — Free'}
+            {enrolling ? 'Sending Request...' : 'Request Enrollment — Free'}
           </Button>
         )}
       </View>
@@ -826,6 +960,38 @@ export default function CourseDetailScreen({ route, navigation }) {
             </View>
           </View>
         </View>
+      </Modal>
+
+      {/* ═══ Unregister Student Modal ═══ */}
+      <Modal visible={!!removeTarget} transparent animationType="fade" onRequestClose={() => setRemoveTarget(null)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.confirmOverlay}>
+          <View style={styles.confirmBox}>
+            <Text style={styles.confirmTitle}>Unregister student?</Text>
+            <Text style={styles.confirmMsg}>
+              {removeTarget ? `${removeTarget.user.firstName} ${removeTarget.user.lastName}` : ''} will be removed
+              from this course and notified. You can add a short note — for example, advising them to switch
+              to a course that fits them better.
+            </Text>
+            <TextInput
+              value={removeReason}
+              onChangeText={setRemoveReason}
+              placeholder="Optional note to the student..."
+              placeholderTextColor="#555"
+              style={[styles.modalInput, { marginBottom: 18 }]}
+              multiline
+            />
+            <View style={styles.confirmActions}>
+              <TouchableOpacity onPress={() => setRemoveTarget(null)} style={[styles.confirmBtn, styles.confirmCancel]}>
+                <Text style={styles.confirmCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={confirmRemoveStudent} disabled={removing} style={[styles.confirmBtn, styles.confirmDanger]}>
+                {removing
+                  ? <ActivityIndicator size="small" color={COLORS.red} />
+                  : <Text style={styles.confirmDangerText}>Unregister</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ═══ Add Module Modal ═══ */}

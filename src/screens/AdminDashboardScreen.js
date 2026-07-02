@@ -44,6 +44,8 @@ export default function AdminDashboardScreen({ navigation }) {
 
   const quickActions = [
     FEATURES.ANNOUNCEMENTS && { label: 'Send Announcement', desc: 'Notify all users', icon: 'megaphone-outline', go: () => navigation.navigate('Broadcast') },
+    { label: 'Coursework Inbox', desc: 'Docs from lecturers', icon: 'file-tray-full-outline', go: () => navigation.navigate('CourseworkInbox') },
+    { label: 'Enrollment Requests', desc: 'Pending approvals', icon: 'school-outline', go: () => navigation.navigate('PendingStudents') },
     { label: 'Manage Users', desc: 'Roles & permissions', icon: 'people-outline', go: () => navigation.navigate('UserManagement') },
     { label: 'Create Lecturer', desc: 'Add new lecturer', icon: 'person-add-outline', go: () => navigation.navigate('CreateLecturer') },
     { label: 'Register Student', desc: 'Add new student', icon: 'school-outline', go: () => navigation.navigate('CreateStudent') },
@@ -61,8 +63,8 @@ export default function AdminDashboardScreen({ navigation }) {
   const roleChartData = stats ? [
     { label: 'Students', value: stats.byRole?.STUDENT || 0, color: COLORS.blue },
     { label: 'Lecturers', value: stats.byRole?.LECTURER || 0, color: COLORS.teal },
-    { label: 'Admin', value: stats.byRole?.FACULTY || 0, color: COLORS.orange },
-    { label: 'Admins', value: stats.byRole?.SUPER_ADMIN || 0, color: COLORS.pink },
+    { label: 'Admins', value: stats.byRole?.FACULTY || 0, color: COLORS.orange },
+    { label: 'Super Admins', value: stats.byRole?.SUPER_ADMIN || 0, color: COLORS.pink },
   ] : [];
 
   const maxBarValue = Math.max(...roleChartData.map(d => d.value), 1);

@@ -5,7 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { Avatar, Card, Button, Badge, StatusDot, Toast, useToast, ConfirmModal } from '../components/UI';
-import { apiGetUser, apiChangeRole, apiChangeStatus } from '../services/api';
+import {
+  apiGetUser, apiChangeRole, apiChangeStatus,
+  apiUserEnrollments, apiRegisterStudent, apiUnregisterStudent, apiListCourses,
+} from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const roleLabel = (role) => ({
@@ -27,6 +30,13 @@ export default function UserDetailScreen({ route, navigation }) {
   const [confirmModal, setConfirmModal] = useState(null); // { title, message, onConfirm, danger }
   // Role picker modal
   const [roleModal, setRoleModal] = useState(false);
+
+  // Enrollment management (students only)
+  const [enrollments, setEnrollments] = useState([]);
+  const [enrollLoading, setEnrollLoading] = useState(false);
+  const [coursePicker, setCoursePicker] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
 
   const roleColor = (role) => ({
     STUDENT: COLORS.blue, LECTURER: COLORS.teal, FACULTY: COLORS.orange, SUPER_ADMIN: COLORS.pink,
@@ -50,6 +60,72 @@ export default function UserDetailScreen({ route, navigation }) {
   }, [userId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Load the student's course registrations
+  const loadEnrollments = useCallback(async () => {
+    if (!userId) return;
+    setEnrollLoading(true);
+    try {
+      const res = await apiUserEnrollments(userId);
+      setEnrollments((res.data?.enrollments || []).filter(e => e.status !== 'DROPPED'));
+    } catch (_) {}
+    finally { setEnrollLoading(false); }
+  }, [userId]);
+
+  useEffect(() => {
+    if (user?.role === 'STUDENT') loadEnrollments();
+  }, [user?.role, loadEnrollments]);
+
+  const openCoursePicker = async () => {
+    setCoursePicker(true);
+    setCoursesLoading(true);
+    try {
+      const res = await apiListCourses({ published: 'true', limit: 100 });
+      const enrolledCourseIds = new Set(enrollments.map(e => e.course?.id));
+      setCourses((res.data?.courses || []).filter(c => !enrolledCourseIds.has(c.id)));
+    } catch (e) {
+      showToast(e.message || 'Could not load courses', 'error');
+      setCoursePicker(false);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
+
+  const registerIntoCourse = async (course) => {
+    setCoursePicker(false);
+    setActing(true);
+    try {
+      await apiRegisterStudent(course.id, user.id);
+      showToast(`Registered for ${course.title}`, 'success');
+      loadEnrollments();
+    } catch (e) {
+      showToast(e.message || 'Could not register the student', 'error');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const removeFromCourse = (en) => {
+    setConfirmModal({
+      title: 'Unregister from course',
+      message: `Remove ${user.firstName} from ${en.course?.title}? They will be notified.`,
+      danger: true,
+      confirmLabel: 'Unregister',
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setActing(true);
+        try {
+          await apiUnregisterStudent(en.course.id, user.id);
+          setEnrollments(prev => prev.filter(e => e.id !== en.id));
+          showToast('Student unregistered from the course', 'success');
+        } catch (e) {
+          showToast(e.message || 'Could not unregister', 'error');
+        } finally {
+          setActing(false);
+        }
+      },
+    });
+  };
 
   const doChangeStatus = (newStatus, label) => {
     if (!user) return;
@@ -116,6 +192,16 @@ export default function UserDetailScreen({ route, navigation }) {
     roleOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
     roleColor: { width: 10, height: 10, borderRadius: 5 },
     roleOptionText: { flex: 1, fontSize: 14, color: COLORS.t1 },
+    // Enrollment management
+    enrollRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, gap: 10 },
+    enrollTitle: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.t1 },
+    enrollMeta: { fontSize: 10, color: COLORS.t3, marginTop: 1 },
+    removeBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: COLORS.red + '40', alignItems: 'center', justifyContent: 'center' },
+    pickerSheet: { backgroundColor: COLORS.elevated, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 34, maxHeight: '70%' },
+    pickerTitle: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.t1, marginBottom: 12 },
+    pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    pickerCourse: { flex: 1, fontSize: 13, color: COLORS.t1 },
+    pickerCode: { fontSize: 11, color: COLORS.t3 },
   }), [COLORS]);
 
   if (loading) {
@@ -191,6 +277,32 @@ export default function UserDetailScreen({ route, navigation }) {
         </TouchableOpacity>
       </Modal>
 
+      {/* Course picker for direct registration */}
+      <Modal visible={coursePicker} transparent animationType="slide" onRequestClose={() => setCoursePicker(false)}>
+        <TouchableOpacity style={styles.roleOverlay} activeOpacity={1} onPress={() => setCoursePicker(false)}>
+          <View style={styles.pickerSheet}>
+            <Text style={styles.pickerTitle}>Register {user.firstName} for…</Text>
+            {coursesLoading ? (
+              <ActivityIndicator color={COLORS.accent} style={{ marginVertical: 24 }} />
+            ) : courses.length === 0 ? (
+              <Text style={{ fontSize: 12, color: COLORS.t3, textAlign: 'center', paddingVertical: 20 }}>
+                No other published courses available.
+              </Text>
+            ) : (
+              <ScrollView>
+                {courses.map(c => (
+                  <TouchableOpacity key={c.id} style={styles.pickerRow} onPress={() => registerIntoCourse(c)}>
+                    <Ionicons name="book-outline" size={16} color={COLORS.accent} />
+                    <Text style={styles.pickerCourse} numberOfLines={1}>{c.title}</Text>
+                    <Text style={styles.pickerCode}>{c.code}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
@@ -226,6 +338,46 @@ export default function UserDetailScreen({ route, navigation }) {
             </View>
           ))}
         </Card>
+
+        {/* Course registrations — admin/faculty manage who is registered where */}
+        {user.role === 'STUDENT' && (
+          <>
+            <Text style={styles.actionsTitle}>Course Registrations</Text>
+            <Card style={{ padding: 0 }}>
+              {enrollLoading ? (
+                <ActivityIndicator color={COLORS.accent} style={{ marginVertical: 20 }} />
+              ) : enrollments.length === 0 ? (
+                <Text style={{ fontSize: 12, color: COLORS.t3, textAlign: 'center', paddingVertical: 18 }}>
+                  Not registered in any course yet.
+                </Text>
+              ) : (
+                enrollments.map((en, i) => (
+                  <View key={en.id} style={[styles.enrollRow, i < enrollments.length - 1 && styles.infoRowBorder]}>
+                    <Ionicons name="book-outline" size={16} color={COLORS.accent} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.enrollTitle} numberOfLines={1}>{en.course?.title}</Text>
+                      <Text style={styles.enrollMeta}>
+                        {en.course?.code} • {Math.round(en.progress || 0)}% complete
+                      </Text>
+                    </View>
+                    <Badge
+                      label={en.status === 'PENDING' ? 'Pending' : en.status === 'COMPLETED' ? 'Completed' : 'Enrolled'}
+                      color={en.status === 'PENDING' ? COLORS.orange : en.status === 'COMPLETED' ? COLORS.teal : COLORS.green}
+                    />
+                    <TouchableOpacity onPress={() => removeFromCourse(en)} style={styles.removeBtn}>
+                      <Ionicons name="person-remove-outline" size={14} color={COLORS.red} />
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+            </Card>
+            <View style={{ marginTop: 10 }}>
+              <Button variant="secondary" onPress={openCoursePicker} disabled={acting}>
+                <Text style={{ color: COLORS.teal }}>+ Register for a Course</Text>
+              </Button>
+            </View>
+          </>
+        )}
 
         <Text style={styles.actionsTitle}>Actions</Text>
 
