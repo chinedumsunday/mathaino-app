@@ -9,12 +9,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
-import { Avatar, Badge } from '../components/UI';
+import { Avatar, Badge, VideoPlayer } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import {
   apiGetFeed, apiCreatePost, apiDeletePost, apiToggleLike,
   apiGetComments, apiAddComment, apiDeleteComment, apiYoutubeSearch,
 } from '../services/api';
+
+// In-app viewer for Instagram embeds; loaded lazily so web builds skip it
+let RNWebView = null;
+if (Platform.OS !== 'web') {
+  try { RNWebView = require('react-native-webview').WebView; } catch (_) {}
+}
 
 function timeAgo(date) {
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
@@ -28,35 +34,79 @@ function isInstagramUrl(url) {
   return url && /instagram\.com\/(p|reel|tv)\//i.test(url);
 }
 
+// Instagram's tokenless embed page — works for public posts; the external
+// link stays available as an escape hatch for login-walled ones.
+function igEmbedUrl(url) {
+  const m = (url || '').match(/instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+  return m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : null;
+}
+
 function InstagramCard({ url, styles, COLORS }) {
+  const [viewer, setViewer] = useState(false);
+  const embedUrl = igEmbedUrl(url);
+  const canViewInApp = !!(embedUrl && RNWebView);
+  const openExternal = () => Linking.openURL(url);
+
   return (
-    <TouchableOpacity style={styles.igCard} onPress={() => Linking.openURL(url)}>
-      <View style={styles.igIconWrap}>
-        <Ionicons name="logo-instagram" size={26} color="#E1306C" />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.igLabel}>Instagram Post</Text>
-        <Text style={styles.igUrl} numberOfLines={1}>{url}</Text>
-        <Text style={styles.igTap}>Tap to view on Instagram</Text>
-      </View>
-      <Ionicons name="open-outline" size={16} color={COLORS.t3} />
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity style={styles.igCard} onPress={() => canViewInApp ? setViewer(true) : openExternal()}>
+        <View style={styles.igIconWrap}>
+          <Ionicons name="logo-instagram" size={26} color="#E1306C" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.igLabel}>Instagram Post</Text>
+          <Text style={styles.igUrl} numberOfLines={1}>{url}</Text>
+          <Text style={styles.igTap}>{canViewInApp ? 'Tap to view' : 'Tap to view on Instagram'}</Text>
+        </View>
+        <Ionicons name={canViewInApp ? 'play-circle-outline' : 'open-outline'} size={18} color={COLORS.t3} />
+      </TouchableOpacity>
+
+      {viewer && (
+        <Modal visible animationType="slide" onRequestClose={() => setViewer(false)}>
+          <SafeAreaView style={styles.igViewer} edges={['top', 'bottom']}>
+            <View style={styles.igViewerBar}>
+              <TouchableOpacity onPress={() => setViewer(false)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={24} color={COLORS.t1} />
+              </TouchableOpacity>
+              <Text style={styles.igViewerTitle}>Instagram</Text>
+              <TouchableOpacity onPress={openExternal} style={{ padding: 4 }}>
+                <Ionicons name="open-outline" size={20} color={COLORS.t1} />
+              </TouchableOpacity>
+            </View>
+            <RNWebView
+              source={{ uri: embedUrl }}
+              originWhitelist={['*']}
+              javaScriptEnabled
+              domStorageEnabled
+              setSupportMultipleWindows={false}
+              style={{ flex: 1, backgroundColor: '#fff' }}
+            />
+          </SafeAreaView>
+        </Modal>
+      )}
+    </>
   );
 }
 
+// Feed attachment: thumbnail first, swaps to the in-app player on tap
+// (lazy so a long feed doesn't mount a WebView per post).
 function YouTubeCard({ videoId, styles }) {
+  const [playing, setPlaying] = useState(false);
+
+  if (playing) {
+    return <VideoPlayer url={`https://www.youtube.com/watch?v=${videoId}`} />;
+  }
   return (
-    <TouchableOpacity
-      onPress={() => Linking.openURL(`https://youtube.com/watch?v=${videoId}`)}
-      style={styles.ytCard}
-    >
-      <View style={styles.ytThumb}>
-        <Ionicons name="logo-youtube" size={28} color="#FF0000" />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.ytLabel}>YouTube Video</Text>
-        <Text style={styles.ytId} numberOfLines={1}>{videoId}</Text>
-        <Text style={styles.ytTap}>Tap to watch</Text>
+    <TouchableOpacity onPress={() => setPlaying(true)} style={styles.ytThumbWrap} activeOpacity={0.85}>
+      <Image
+        source={{ uri: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` }}
+        style={styles.ytThumbImg}
+        resizeMode="cover"
+      />
+      <View style={styles.ytPlayOverlay}>
+        <View style={styles.ytPlayCircle}>
+          <Ionicons name="play" size={24} color="#fff" style={{ marginLeft: 3 }} />
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -234,6 +284,37 @@ export default function SocialFeedScreen({ navigation }) {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [ytNotConfigured, setYtNotConfigured] = useState(false);
 
+  // Videos section (Feed | Videos toggle)
+  const [mode, setMode]                   = useState('feed');
+  const [vidQuery, setVidQuery]           = useState('');
+  const [vidResults, setVidResults]       = useState([]);
+  const [vidLoading, setVidLoading]       = useState(false);
+  const [vidLoaded, setVidLoaded]         = useState(false);
+  const [vidConfigured, setVidConfigured] = useState(true);
+  const [playingVideoId, setPlayingVideoId] = useState(null);
+
+  const loadVideos = useCallback(async (q) => {
+    setVidLoading(true);
+    setPlayingVideoId(null);
+    try {
+      const res = await apiYoutubeSearch(q || 'computer science tutorial');
+      setVidResults(res.data.videos || []);
+      setVidConfigured(res.data.configured !== false);
+    } catch (_) {}
+    finally { setVidLoading(false); setVidLoaded(true); }
+  }, []);
+
+  // First switch to the Videos tab loads a default set of educational videos
+  useEffect(() => {
+    if (mode === 'videos' && !vidLoaded && !vidLoading) loadVideos();
+  }, [mode, vidLoaded, vidLoading, loadVideos]);
+
+  // "Share to feed" from the Videos tab: attach the video and jump to compose
+  const shareToFeed = (video) => {
+    setSelectedVideo(video);
+    setMode('feed');
+  };
+
   const load = useCallback(async () => {
     try {
       const res = await apiGetFeed();
@@ -394,18 +475,71 @@ export default function SocialFeedScreen({ navigation }) {
     igUrl: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
     igTap: { fontSize: 10, color: '#E1306C', marginTop: 4 },
 
-    ytCard: {
-      flexDirection: 'row', alignItems: 'center', gap: 10,
-      backgroundColor: '#FF000010', borderRadius: RADIUS.md,
+    // In-feed YouTube attachment (thumbnail → tap → inline player)
+    ytThumbWrap: {
+      width: '100%', aspectRatio: 16 / 9, borderRadius: RADIUS.md,
+      overflow: 'hidden', backgroundColor: '#000', marginBottom: 10,
+    },
+    ytThumbImg: { width: '100%', height: '100%' },
+    ytPlayOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center', justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.25)',
+    },
+    ytPlayCircle: {
+      width: 52, height: 52, borderRadius: 26,
+      backgroundColor: 'rgba(255,0,0,0.9)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    // Instagram in-app viewer
+    igViewer: { flex: 1, backgroundColor: COLORS.bg },
+    igViewerBar: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: SPACING.xl, paddingVertical: 10,
+      borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    },
+    igViewerTitle: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.t1 },
+
+    // Feed | Videos toggle
+    modeRow: {
+      flexDirection: 'row', gap: 8,
+      paddingHorizontal: SPACING.xl, marginBottom: 12,
+    },
+    modeBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingVertical: 7, paddingHorizontal: 16, borderRadius: 18,
+      backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+    },
+    modeBtnActive: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+    modeBtnText: { fontSize: 12, fontWeight: FONT.bold, color: COLORS.t2 },
+    modeBtnTextActive: { color: '#16181D' },
+
+    // Videos section
+    vidSearchRow: { flexDirection: 'row', gap: 10, paddingHorizontal: SPACING.xl, marginBottom: 12 },
+    vidCard: {
+      backgroundColor: COLORS.card, borderRadius: RADIUS.lg,
+      borderWidth: 1, borderColor: COLORS.border,
       padding: 10, marginBottom: 10,
     },
-    ytThumb: {
-      width: 44, height: 44, borderRadius: 8,
-      backgroundColor: '#FF000020', alignItems: 'center', justifyContent: 'center',
+    vidThumbWrap: {
+      width: '100%', aspectRatio: 16 / 9, borderRadius: RADIUS.md,
+      overflow: 'hidden', backgroundColor: '#000',
     },
-    ytLabel: { fontSize: 10, color: COLORS.t3, textTransform: 'uppercase', letterSpacing: 0.5 },
-    ytId: { fontSize: 11, color: COLORS.t2, marginTop: 2 },
-    ytTap: { fontSize: 10, color: COLORS.accent, marginTop: 4 },
+    vidDuration: {
+      position: 'absolute', bottom: 6, right: 6,
+      backgroundColor: 'rgba(0,0,0,0.75)', borderRadius: 4,
+      paddingHorizontal: 5, paddingVertical: 2,
+    },
+    vidDurationText: { fontSize: 10, fontWeight: FONT.bold, color: '#fff' },
+    vidInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+    vidTitle: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1, lineHeight: 18 },
+    vidMeta: { fontSize: 11, color: COLORS.t3, marginTop: 3 },
+    vidShareBtn: {
+      width: 34, height: 34, borderRadius: 17,
+      backgroundColor: COLORS.elevated, alignItems: 'center', justifyContent: 'center',
+    },
+    vidCollapseRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
 
     postActions: {
       flexDirection: 'row', gap: 20, paddingTop: 8,
@@ -479,6 +613,26 @@ export default function SocialFeedScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Feed | Videos toggle */}
+      <View style={styles.modeRow}>
+        <TouchableOpacity
+          onPress={() => setMode('feed')}
+          style={[styles.modeBtn, mode === 'feed' && styles.modeBtnActive]}
+        >
+          <Ionicons name="people" size={13} color={mode === 'feed' ? '#16181D' : COLORS.t3} />
+          <Text style={[styles.modeBtnText, mode === 'feed' && styles.modeBtnTextActive]}>Feed</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setMode('videos')}
+          style={[styles.modeBtn, mode === 'videos' && styles.modeBtnActive]}
+        >
+          <Ionicons name="play-circle" size={13} color={mode === 'videos' ? '#16181D' : COLORS.t3} />
+          <Text style={[styles.modeBtnText, mode === 'videos' && styles.modeBtnTextActive]}>Videos</Text>
+        </TouchableOpacity>
+      </View>
+
+      {mode === 'feed' && (
+      <>
       {/* Compose area */}
       <View style={styles.composeCard}>
         <Avatar size={36} name={`${user?.firstName} ${user?.lastName}`} color={COLORS.accent} url={user?.avatarUrl} />
@@ -595,6 +749,101 @@ export default function SocialFeedScreen({ navigation }) {
             </View>
           }
         />
+      )}
+      </>
+      )}
+
+      {/* Videos section */}
+      {mode === 'videos' && (
+      <>
+        <View style={styles.vidSearchRow}>
+          <TextInput
+            style={styles.ytSearchInput}
+            placeholder="Search educational videos..."
+            placeholderTextColor="#555"
+            value={vidQuery}
+            onChangeText={setVidQuery}
+            onSubmitEditing={() => loadVideos(vidQuery.trim())}
+            returnKeyType="search"
+          />
+          <TouchableOpacity onPress={() => loadVideos(vidQuery.trim())} style={styles.ytSearchBtn} disabled={vidLoading}>
+            {vidLoading
+              ? <ActivityIndicator size="small" color="#000" />
+              : <Ionicons name="search" size={18} color="#000" />}
+          </TouchableOpacity>
+        </View>
+        {!vidConfigured && (
+          <Text style={styles.ytNotConfigText}>YouTube search is not configured yet.</Text>
+        )}
+        {vidLoading && !vidResults.length ? (
+          <ActivityIndicator color={COLORS.accent} style={{ marginTop: 40 }} />
+        ) : (
+          <FlatList
+            data={vidResults}
+            keyExtractor={v => v.id}
+            contentContainerStyle={styles.feedContent}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons name="videocam-outline" size={48} color={COLORS.t3} />
+                <Text style={styles.emptyTitle}>No videos found</Text>
+                <Text style={styles.emptyText}>Try a different search.</Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.vidCard}>
+                {playingVideoId === item.id ? (
+                  <>
+                    <VideoPlayer url={`https://www.youtube.com/watch?v=${item.id}`} />
+                    <View style={styles.vidCollapseRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.vidTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.vidMeta}>{item.channel}{item.views ? ` · ${item.views} views` : ''}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => shareToFeed(item)} style={styles.vidShareBtn}>
+                        <Ionicons name="arrow-redo-outline" size={16} color={COLORS.accent} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setPlayingVideoId(null)} style={styles.vidShareBtn}>
+                        <Ionicons name="chevron-up" size={16} color={COLORS.t3} />
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                ) : (
+                  <TouchableOpacity onPress={() => setPlayingVideoId(item.id)} activeOpacity={0.85}>
+                    <View style={styles.vidThumbWrap}>
+                      {item.thumbnail ? (
+                        <Image source={{ uri: item.thumbnail }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.ytPlayOverlay, { backgroundColor: '#FF000015' }]}>
+                          <Ionicons name="logo-youtube" size={32} color="#FF0000" />
+                        </View>
+                      )}
+                      <View style={styles.ytPlayOverlay}>
+                        <View style={styles.ytPlayCircle}>
+                          <Ionicons name="play" size={22} color="#fff" style={{ marginLeft: 2 }} />
+                        </View>
+                      </View>
+                      {!!item.duration && (
+                        <View style={styles.vidDuration}>
+                          <Text style={styles.vidDurationText}>{item.duration}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.vidInfoRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.vidTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.vidMeta}>{item.channel}{item.views ? ` · ${item.views} views` : ''}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => shareToFeed(item)} style={styles.vidShareBtn}>
+                        <Ionicons name="arrow-redo-outline" size={16} color={COLORS.accent} />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+          />
+        )}
+      </>
       )}
 
       {/* YouTube search modal */}
