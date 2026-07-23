@@ -14,7 +14,7 @@ export default function FocusScreen({ navigation }) {
     active, remaining, totalSeconds, pct, durationMin,
     justCompleted, xpPerSession, start, stop, clearCompleted,
   } = useFocus();
-  const [duration, setDuration] = useState(25);
+  const [duration, setDuration] = useState(30);
   const [confirmStop, setConfirmStop] = useState(false);
 
   const mins = Math.floor((active ? remaining : duration * 60) / 60);
@@ -142,8 +142,13 @@ export default function FocusScreen({ navigation }) {
         {/* Duration selector */}
         {!active && (
           <View style={styles.durationRow}>
-            {[15, 25, 45, 60].map(m => (
-              <Chip key={m} label={`${m}m`} active={duration === m} onPress={() => setDuration(m)} />
+            {[15, 30, 60, 120].map(m => (
+              <Chip
+                key={m}
+                label={m >= 60 ? `${m / 60}h` : `${m}m`}
+                active={duration === m}
+                onPress={() => setDuration(m)}
+              />
             ))}
           </View>
         )}
