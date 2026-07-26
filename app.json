@@ -39,6 +39,13 @@
       "expo-image-picker",
       "expo-font"
     ],
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "experiments": {
+      "baseUrl": "/mathaino-app"
+    },
     "extra": {
       "eas": {
         "projectId": "a45184e1-a365-45ac-9707-980c9a3fd6a0"
