@@ -15,7 +15,7 @@ import {
   apiGetCertificate, apiListDiscussions, apiCreateDiscussion,
   apiDeleteDiscussion, apiCreateReply, apiDeleteReply,
   apiTogglePublish, apiCourseStudents, apiUnregisterStudent,
-  apiApproveEnrollment,
+  apiApproveEnrollment, apiAssignCourse, apiListUsers,
 } from '../services/api';
 
 const CONTENT_TYPES = ['VIDEO', 'DOCUMENT', 'QUIZ', 'ASSIGNMENT'];
@@ -58,6 +58,35 @@ export default function CourseDetailScreen({ route, navigation }) {
   const [removeTarget, setRemoveTarget] = useState(null); // enrollment row
   const [removeReason, setRemoveReason] = useState('');
   const [removing, setRemoving] = useState(false);
+
+  // Assign-to-lecturer (faculty/admin only)
+  const [assignModal, setAssignModal] = useState(false);
+  const [lecturers, setLecturers] = useState([]);
+  const [lecturersLoading, setLecturersLoading] = useState(false);
+  const [assigningId, setAssigningId] = useState(null);
+
+  const openAssignModal = async () => {
+    setAssignModal(true);
+    setLecturersLoading(true);
+    try {
+      const res = await apiListUsers({ role: 'LECTURER', status: 'ACTIVE', limit: 100 });
+      setLecturers(res.data.users || []);
+    } catch (_) { setLecturers([]); }
+    finally { setLecturersLoading(false); }
+  };
+
+  const handleAssign = async (lecturer) => {
+    if (assigningId) return;
+    setAssigningId(lecturer.id);
+    try {
+      const res = await apiAssignCourse(course.id, lecturer.id);
+      setCourse(c => ({ ...c, creator: res.data.course.creator }));
+      setAssignModal(false);
+      showToast(`Course assigned to ${lecturer.firstName} ${lecturer.lastName}`);
+    } catch (e) {
+      showToast(e.message || 'Could not assign course', 'error');
+    } finally { setAssigningId(null); }
+  };
 
   const CONTENT_ICON = useMemo(() => ({
     VIDEO:        { name: 'play-circle',      color: COLORS.teal },
@@ -142,6 +171,22 @@ export default function CourseDetailScreen({ route, navigation }) {
     replyTextInput: { flex: 1, backgroundColor: COLORS.elevated, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 8, fontSize: 12, color: COLORS.t1 },
     replyBtn: { padding: 8 },
     // Modal
+    assignBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 8,
+      paddingVertical: 5, paddingHorizontal: 10, borderRadius: 12,
+      backgroundColor: COLORS.accent + '18', borderWidth: 1, borderColor: COLORS.accent + '50',
+    },
+    assignBtnText: { fontSize: 11, fontWeight: FONT.bold, color: COLORS.accent },
+    assignHint: { fontSize: 12, color: COLORS.t3, lineHeight: 17, marginTop: -10, marginBottom: 14 },
+    assignEmpty: { fontSize: 13, color: COLORS.t3, textAlign: 'center', marginVertical: 30 },
+    assignRow: {
+      flexDirection: 'row', alignItems: 'center',
+      paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    },
+    assignName: { fontSize: 13, fontWeight: FONT.bold, color: COLORS.t1 },
+    assignEmail: { fontSize: 11, color: COLORS.t3, marginTop: 1 },
+    assignCancel: { alignItems: 'center', paddingVertical: 14 },
+    assignCancelText: { fontSize: 14, color: COLORS.t3 },
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
     modalSheet: { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: SPACING.xl, maxHeight: '90%' },
     modalHandle: { width: 40, height: 4, backgroundColor: COLORS.border, borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
@@ -527,6 +572,12 @@ export default function CourseDetailScreen({ route, navigation }) {
                 ? <Badge label="Pending Approval" color={COLORS.orange} />
                 : <Badge label="Not Enrolled" color={COLORS.t3} />
             }
+            {['FACULTY', 'SUPER_ADMIN'].includes(user?.role) && (
+              <TouchableOpacity onPress={openAssignModal} style={styles.assignBtn}>
+                <Ionicons name="swap-horizontal" size={14} color={COLORS.accent} />
+                <Text style={styles.assignBtnText}>Assign</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Stats — enrollment numbers are lecturer/admin information only */}
@@ -1170,6 +1221,54 @@ export default function CourseDetailScreen({ route, navigation }) {
             <View style={{ height: 20 }} />
           </ScrollView>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Assign-to-lecturer modal (faculty/admin) */}
+      <Modal visible={assignModal} transparent animationType="slide" onRequestClose={() => setAssignModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Assign Course to Lecturer</Text>
+            <Text style={styles.assignHint}>
+              The lecturer takes over this course — its content, student approvals, and live classes.
+            </Text>
+            {lecturersLoading ? (
+              <ActivityIndicator color={COLORS.accent} style={{ marginVertical: 30 }} />
+            ) : lecturers.length === 0 ? (
+              <Text style={styles.assignEmpty}>No active lecturer accounts found.</Text>
+            ) : (
+              <ScrollView style={{ maxHeight: 380 }}>
+                {lecturers.map(l => {
+                  const name = `${l.firstName} ${l.lastName}`.trim();
+                  const isCurrent = l.id === course?.creator?.id;
+                  return (
+                    <TouchableOpacity
+                      key={l.id}
+                      onPress={() => !isCurrent && handleAssign(l)}
+                      disabled={isCurrent || !!assigningId}
+                      style={[styles.assignRow, isCurrent && { opacity: 0.45 }]}
+                    >
+                      <Avatar size={34} name={name} color={COLORS.teal} url={l.avatarUrl} />
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.assignName}>{name}</Text>
+                        <Text style={styles.assignEmail} numberOfLines={1}>{l.email}</Text>
+                      </View>
+                      {isCurrent
+                        ? <Badge label="Current" color={COLORS.t3} />
+                        : assigningId === l.id
+                          ? <ActivityIndicator size="small" color={COLORS.accent} />
+                          : <Ionicons name="chevron-forward" size={16} color={COLORS.t3} />
+                      }
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+            <TouchableOpacity onPress={() => setAssignModal(false)} style={styles.assignCancel}>
+              <Text style={styles.assignCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

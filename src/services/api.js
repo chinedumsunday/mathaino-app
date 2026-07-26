@@ -130,6 +130,9 @@ export const apiTogglePublish = (id) =>
 export const apiMyCourses = () =>
   request('/courses/my');
 
+export const apiAssignCourse = (courseId, lecturerId) =>
+  request(`/courses/${courseId}/assign`, { method: 'PATCH', body: JSON.stringify({ lecturerId }) });
+
 // ═══ MODULES ═══
 export const apiCreateModule = (courseId, body) =>
   request(`/courses/${courseId}/modules`, { method: 'POST', body: JSON.stringify(body) });
