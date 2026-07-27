@@ -148,13 +148,16 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(true);
   };
 
-  // Sign in with a Google ID token (from expo-auth-session).
+  // Sign in with Google tokens from expo-auth-session — either a string ID
+  // token (native) or { idToken, accessToken } (web, where Google's token
+  // exchange may omit the ID token). Firebase accepts either credential.
   // New Google users are auto-registered as Students by the backend.
-  const loginWithGoogle = async (googleIdToken) => {
+  const loginWithGoogle = async (googleTokens) => {
     if (!firebaseAuth || !fbSignInWithCredential || !fbGoogleProvider) {
       throw new Error('Firebase not initialized. Please restart the app.');
     }
-    const credential = fbGoogleProvider.credential(googleIdToken);
+    const t = typeof googleTokens === 'string' ? { idToken: googleTokens } : (googleTokens || {});
+    const credential = fbGoogleProvider.credential(t.idToken || null, t.accessToken || null);
     const cred = await fbSignInWithCredential(firebaseAuth, credential);
     const idToken = await cred.user.getIdToken();
     const res = await apiLogin(idToken);

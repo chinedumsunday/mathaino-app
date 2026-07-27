@@ -45,12 +45,15 @@ function GoogleSignInButton({ onToken, onError, loading }) {
   useEffect(() => {
     if (!response) return;
     if (response.type === 'success') {
-      const idToken = response.authentication?.idToken || response.params?.id_token;
-      if (idToken) {
-        onToken(idToken);
+      // Google's web token exchange sometimes returns only an access token
+      // (idToken key present but empty) — Firebase accepts either, so pass both.
+      const idToken = response.authentication?.idToken || response.params?.id_token || null;
+      const accessToken = response.authentication?.accessToken || null;
+      if (idToken || accessToken) {
+        onToken({ idToken, accessToken });
       } else {
         const got = response.authentication ? Object.keys(response.authentication).join(', ') : 'nothing';
-        onError(`Google sign-in came back without an ID token (received: ${got}). Please try again.`);
+        onError(`Google sign-in came back without a usable token (received: ${got}). Please try again.`);
       }
     } else if (response.type === 'error') {
       onError(`Google sign-in failed: ${response.error?.message || response.params?.error_description || response.error || 'unknown error'}`);
@@ -92,11 +95,11 @@ export default function LoginScreen({ navigation }) {
 
   const showGoogle = googleReadyForPlatform();
 
-  const handleGoogleToken = async (idToken) => {
+  const handleGoogleToken = async (tokens) => {
     setError('');
     setGoogleLoading(true);
     try {
-      await loginWithGoogle(idToken);
+      await loginWithGoogle(tokens);
     } catch (err) {
       setError(err.message || 'Google sign-in failed. Please try again.');
     } finally {
