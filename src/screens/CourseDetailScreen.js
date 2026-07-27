@@ -65,6 +65,16 @@ export default function CourseDetailScreen({ route, navigation }) {
   const [lecturersLoading, setLecturersLoading] = useState(false);
   const [assigningId, setAssigningId] = useState(null);
 
+  // Declared here (not with the other derived values further down) because the
+  // Students-tab effect lists it as a dependency — a dependency array is
+  // evaluated during render, so a later `const` would be read before it is
+  // initialized and crash the screen with a TDZ ReferenceError.
+  // Lecturers only manage courses they created; faculty/admin manage all.
+  const canManage =
+    (user && course?.creator?.id && user.id === course.creator.id) ||
+    user?.role === 'FACULTY' ||
+    user?.role === 'SUPER_ADMIN';
+
   const openAssignModal = async () => {
     setAssignModal(true);
     setLecturersLoading(true);
@@ -502,13 +512,7 @@ export default function CourseDetailScreen({ route, navigation }) {
 
   const contentIcon = (type) => CONTENT_ICON[type] || { name: 'document-text', color: COLORS.blue };
 
-  // canManage must come first — modules display depends on it.
-  // Lecturers only manage courses they created; faculty/admin manage all.
-  const canManage =
-    (user && course?.creator?.id && user.id === course.creator.id) ||
-    user?.role === 'FACULTY' ||
-    user?.role === 'SUPER_ADMIN';
-
+  // canManage is declared with the state block above — see the note there.
   const realModules  = course?.modules || [];
   const modules      = realModules;
   const isPending    = enrollment?.status === 'PENDING';
