@@ -34,6 +34,12 @@ function GoogleSignInButton({ onToken, onError, loading }) {
     webClientId: GOOGLE_WEB_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID || undefined,
     iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
+    // Web: expo's default redirect is the bare origin, which breaks when the
+    // portal is served from a subpath (GitHub Pages). Redirect to the page
+    // itself — maybeCompleteAuthSession() there hands the result back.
+    ...(Platform.OS === 'web' && typeof window !== 'undefined'
+      ? { redirectUri: window.location.origin + window.location.pathname }
+      : {}),
   });
 
   useEffect(() => {
