@@ -119,3 +119,15 @@ export const presenceLabel = (presence) => ({
   EXITED: 'Left',
   NOT_JOINED: 'Not joined',
 }[presence] || presence);
+
+// Countdown display: mm:ss under an hour, h:mm:ss at or above it — so a
+// 2-hour focus session reads "2:00:00" rather than a misleading "120:00".
+export const formatClock = (totalSeconds) => {
+  const s = Math.max(0, Math.round(totalSeconds || 0));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+    : `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+};

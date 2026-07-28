@@ -8,7 +8,7 @@ import {
   TextInput, FlatList, Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FONT, SPACING, RADIUS, progressColor, formatClock } from '../utils/theme';
 import { FEATURES } from '../config/features';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -257,8 +257,7 @@ function FocusMiniTimer({ currentRoute }) {
   const { colors: COLORS } = useTheme();
 
   if (!active || currentRoute === 'Focus' || currentRoute === 'LiveClassroom') return null;
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
+
 
   return (
     <TouchableOpacity
@@ -275,7 +274,7 @@ function FocusMiniTimer({ currentRoute }) {
     >
       <Ionicons name="timer" size={15} color={COLORS.pink} />
       <Text style={{ fontSize: 13, fontWeight: '700', color: COLORS.t1, fontVariant: ['tabular-nums'] }}>
-        {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+        {formatClock(remaining)}
       </Text>
     </TouchableOpacity>
   );

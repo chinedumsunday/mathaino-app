@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
-import { Avatar } from '../components/UI';
+import { Avatar, MarkdownText } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { apiAIChat, apiYoutubeSearch, apiAIYoutubeSuggest } from '../services/api';
 
@@ -170,7 +170,9 @@ export default function AIChatScreen({ route, navigation }) {
           </View>
         )}
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble, item.error && styles.errorBubble]}>
-          <Text style={[styles.bubbleText, isUser && styles.userBubbleText]}>{item.content}</Text>
+          {isUser
+            ? <Text style={[styles.bubbleText, styles.userBubbleText]}>{item.content}</Text>
+            : <MarkdownText style={styles.bubbleText}>{item.content}</MarkdownText>}
         </View>
       </View>
     );

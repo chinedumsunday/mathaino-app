@@ -346,6 +346,79 @@ export function ConfirmModal({ visible, title, message, onConfirm, onCancel, con
   );
 }
 
+// ═══ MARKDOWN TEXT ═══
+// The AI assistant replies in markdown, which a plain <Text> renders
+// literally ("**bold**", "- item"). This renders the subset the model
+// actually uses: headings, bullet/numbered lists, bold, italic, inline code.
+const MD_INLINE = /(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\*[^*\n]+\*|_[^_\n]+_)/g;
+const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+
+function mdInline(text, keyPrefix) {
+  return String(text)
+    .split(MD_INLINE)
+    .filter(p => p !== '' && p !== undefined)
+    .map((p, i) => {
+      const key = `${keyPrefix}-${i}`;
+      if (/^(\*\*[^*]+\*\*|__[^_]+__)$/.test(p)) {
+        return <Text key={key} style={{ fontWeight: FONT.bold }}>{p.slice(2, -2)}</Text>;
+      }
+      if (/^`[^`]+`$/.test(p)) {
+        return <Text key={key} style={{ fontFamily: MONO, fontSize: 13 }}>{p.slice(1, -1)}</Text>;
+      }
+      if (/^([*_])[^*_]+\1$/.test(p)) {
+        return <Text key={key} style={{ fontStyle: 'italic' }}>{p.slice(1, -1)}</Text>;
+      }
+      return <Text key={key}>{p}</Text>;
+    });
+}
+
+export function MarkdownText({ children, style }) {
+  const blocks = useMemo(() => {
+    const out = [];
+    String(children ?? '').split('\n').forEach((line, i) => {
+      const t = line.trim();
+      if (!t) { out.push({ type: 'gap', key: i }); return; }
+      if (/^([-*_])\1{2,}$/.test(t)) { out.push({ type: 'rule', key: i }); return; }
+      let m;
+      if ((m = t.match(/^#{1,6}\s+(.*)$/)))     { out.push({ type: 'h',  text: m[1], key: i }); return; }
+      if ((m = t.match(/^[-*+]\s+(.*)$/)))      { out.push({ type: 'ul', text: m[1], key: i }); return; }
+      if ((m = t.match(/^(\d+)[.)]\s+(.*)$/)))  { out.push({ type: 'ol', num: m[1], text: m[2], key: i }); return; }
+      out.push({ type: 'p', text: t, key: i });
+    });
+    return out;
+  }, [children]);
+
+  return (
+    <View>
+      {blocks.map((b, idx) => {
+        const last = idx === blocks.length - 1;
+        if (b.type === 'gap')  return <View key={b.key} style={{ height: last ? 0 : 6 }} />;
+        if (b.type === 'rule') return <View key={b.key} style={{ height: 1, backgroundColor: style?.color || '#888', opacity: 0.25, marginVertical: 8 }} />;
+        if (b.type === 'h') {
+          return (
+            <Text key={b.key} style={[style, { fontWeight: FONT.bold, fontSize: (style?.fontSize || 14) + 1, marginBottom: 3 }]}>
+              {mdInline(b.text, b.key)}
+            </Text>
+          );
+        }
+        if (b.type === 'ul' || b.type === 'ol') {
+          return (
+            <View key={b.key} style={{ flexDirection: 'row', marginBottom: 3 }}>
+              <Text style={[style, { marginRight: 6 }]}>{b.type === 'ul' ? '•' : `${b.num}.`}</Text>
+              <Text style={[style, { flex: 1 }]}>{mdInline(b.text, b.key)}</Text>
+            </View>
+          );
+        }
+        return (
+          <Text key={b.key} style={[style, { marginBottom: last ? 0 : 3 }]}>
+            {mdInline(b.text, b.key)}
+          </Text>
+        );
+      })}
+    </View>
+  );
+}
+
 // ═══ VIDEO PLAYER ═══
 // Plays a lesson video from any pasted host — YouTube, Vimeo, Google Drive,
 // Dropbox, or a direct file link — inline, in-app.

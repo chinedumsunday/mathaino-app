@@ -9,9 +9,13 @@ import { FONT, SPACING, RADIUS } from '../utils/theme';
 import { Card, Button, Badge, Toast, useToast } from '../components/UI';
 import { apiListCourses, apiEnroll, apiMyEnrollments } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function BrowseScreen({ navigation }) {
   const { colors: COLORS } = useTheme();
+  // Managers reach this screen as "All Courses" — they browse to inspect and
+  // manage, never to enrol (the backend rejects non-student enrolment anyway).
+  const { isStudent } = useAuth();
   const [courses, setCourses] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState(new Set());
   const [pendingIds, setPendingIds] = useState(new Set());
@@ -26,8 +30,8 @@ export default function BrowseScreen({ navigation }) {
   const load = useCallback(async () => {
     try {
       const [coursesRes, enrollmentsRes] = await Promise.allSettled([
-        apiListCourses({ published: 'true' }),
-        apiMyEnrollments(),
+        apiListCourses(isStudent ? { published: 'true' } : {}),
+        isStudent ? apiMyEnrollments() : Promise.resolve({ data: { enrollments: [] } }),
       ]);
 
       if (coursesRes.status === 'fulfilled') {
@@ -52,13 +56,17 @@ export default function BrowseScreen({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isStudent]);
 
   useEffect(() => { load(); }, [load]);
 
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
 
   const handleEnrollPress = (course) => {
+    if (!isStudent) {
+      navigation.navigate('CourseDetail', { courseId: course.id });
+      return;
+    }
     if (enrolledIds.has(course.id) || pendingIds.has(course.id)) {
       navigation.navigate('CourseDetail', { courseId: course.id });
       return;
@@ -148,7 +156,7 @@ export default function BrowseScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color={COLORS.t1} />
         </TouchableOpacity>
-        <Text style={styles.title}>Browse Courses</Text>
+        <Text style={styles.title}>{isStudent ? 'Browse Courses' : 'All Courses'}</Text>
       </View>
 
       {/* Enroll confirmation modal */}
@@ -204,7 +212,7 @@ export default function BrowseScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.accent} />}
         >
           <Text style={styles.subtitle}>
-            {filtered.length} {filtered.length === 1 ? 'course' : 'courses'} available
+            {filtered.length} {filtered.length === 1 ? 'course' : 'courses'}{isStudent ? ' available' : ''}
           </Text>
 
           {filtered.map(course => {
@@ -223,8 +231,14 @@ export default function BrowseScreen({ navigation }) {
                     <Text style={styles.courseTitle}>{course.title}</Text>
                     <Text style={styles.courseSub}>{creatorName} • {course.code}</Text>
                   </View>
-                  {isEnrolled && <Badge label="Enrolled" color={COLORS.teal} />}
-                  {isPending && <Badge label="Pending" color={COLORS.orange} />}
+                  {isStudent && isEnrolled && <Badge label="Enrolled" color={COLORS.teal} />}
+                  {isStudent && isPending && <Badge label="Pending" color={COLORS.orange} />}
+                  {!isStudent && (
+                    <Badge
+                      label={course.isPublished ? 'Published' : 'Draft'}
+                      color={course.isPublished ? COLORS.teal : COLORS.orange}
+                    />
+                  )}
                 </View>
 
                 {course.description && (
@@ -244,10 +258,11 @@ export default function BrowseScreen({ navigation }) {
 
                 <Button
                   onPress={() => handleEnrollPress(course)}
-                  variant={isEnrolled || isPending ? 'secondary' : 'primary'}
+                  variant={!isStudent || isEnrolled || isPending ? 'secondary' : 'primary'}
                   disabled={isEnrollingThis}
                 >
-                  {isEnrollingThis ? 'Sending Request...'
+                  {!isStudent ? 'View Course →'
+                    : isEnrollingThis ? 'Sending Request...'
                     : isEnrolled ? 'Continue Learning →'
                     : isPending ? 'Awaiting Approval →'
                     : 'Request Enrollment — Free'}

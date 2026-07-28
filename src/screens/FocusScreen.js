@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
-import { FONT, SPACING, RADIUS, progressColor } from '../utils/theme';
+import { FONT, SPACING, RADIUS, progressColor, formatClock } from '../utils/theme';
 import { Chip, Button } from '../components/UI';
 import { useTheme } from '../context/ThemeContext';
 import { useFocus } from '../context/FocusContext';
@@ -17,8 +17,7 @@ export default function FocusScreen({ navigation }) {
   const [duration, setDuration] = useState(30);
   const [confirmStop, setConfirmStop] = useState(false);
 
-  const mins = Math.floor((active ? remaining : duration * 60) / 60);
-  const secs = (active ? remaining : duration * 60) % 60;
+  const clock = formatClock(active ? remaining : duration * 60);
 
   const handleToggle = () => {
     if (active) setConfirmStop(true);
@@ -131,7 +130,7 @@ export default function FocusScreen({ navigation }) {
           </Svg>
           <View style={styles.timerCenter}>
             <Text style={styles.timerText}>
-              {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+              {clock}
             </Text>
             <Text style={styles.timerLabel}>
               {active ? 'Stay focused!' : 'Ready?'}

@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FONT, SPACING, RADIUS } from '../utils/theme';
-import { Button, Toast, useToast, VideoPlayer } from '../components/UI';
+import { Button, Toast, useToast, VideoPlayer, MarkdownText } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import {
@@ -558,7 +558,7 @@ export default function LessonScreen({ route, navigation }) {
 
           {/* ── Reading / Video body content ── */}
           {!isQuiz && !isAssignment && lessonBody ? (
-            <Text style={styles.bodyText}>{lessonBody}</Text>
+            <MarkdownText style={styles.bodyText}>{lessonBody}</MarkdownText>
           ) : null}
 
           {/* XP card */}
