@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { FocusProvider } from './src/context/FocusContext';
 import AppNavigator from './src/navigation/AppNavigator';
+import TrialGate from './src/components/TrialGate';
 
 // Surfaces render-time crashes instead of leaving a blank screen in
 // production builds, so failures are diagnosable from the device itself.
@@ -50,10 +51,11 @@ function AppContent() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <AppNavigator />
-    </>
+      <TrialGate />
+    </View>
   );
 }
 
